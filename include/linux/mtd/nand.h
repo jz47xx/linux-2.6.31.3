@@ -143,6 +143,9 @@ typedef enum {
 /* Enable Hardware ECC before syndrom is read back from flash */
 #define NAND_ECC_READSYN	2
 
+#define NAND_READ_OOB		3
+#define NAND_WRITE_OOB		4
+
 /* Bit mask for flags passed to do_nand_read_ecc */
 #define NAND_GET_DEVICE		0x80
 

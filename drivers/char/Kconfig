@@ -4,6 +4,13 @@
 
 menu "Character devices"
 
+config DVBT_NMI
+	tristate "DVBT nmi driver for test on TSSI"
+	depends on JZSOC
+	help
+         If you have an DVBT board and will test for TSSI function
+         say Y or M here, otherwise say N.
+
 config VT
 	bool "Virtual terminal" if EMBEDDED
 	depends on !S390

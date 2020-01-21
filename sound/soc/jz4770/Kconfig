@@ -1,0 +1,17 @@
+config SND_JZ4770_SOC
+	tristate "SoC Audio for Ingenic jz4770 chip"
+	depends on SOC_JZ4770 && SND_SOC
+	help
+	  Say Y or M if you want to add support for codecs attached to
+	  the Jz4770 AC97, I2S controller.
+
+config SND_JZ4770_SOC_I2S
+        tristate
+
+config SND_JZ4770_SOC_PISCES_ICDC
+	tristate "SoC I2S Audio support for JZ4770 Pisces reference board with internal codec"
+	depends on SND_JZ4770_SOC
+	select SND_JZ4770_SOC_I2S
+	select SND_SOC_JZ4770_ICDC
+	help
+	  Say Y if you want to add audio support for JZ4770 Pisces reference board with internal codec.

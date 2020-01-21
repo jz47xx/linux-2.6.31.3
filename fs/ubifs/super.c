@@ -841,8 +841,11 @@ static void free_orphans(struct ubifs_info *c)
 		kfree(orph);
 		dbg_err("orphan list not empty at unmount");
 	}
-
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->orph_buf);
+#else
 	vfree(c->orph_buf);
+#endif
 	c->orph_buf = NULL;
 }
 
@@ -1186,12 +1189,20 @@ static int mount_ubifs(struct ubifs_info *c)
 	if (!c->bottom_up_buf)
 		goto out_free;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	c->sbuf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 	c->sbuf = vmalloc(c->leb_size);
+#endif
 	if (!c->sbuf)
 		goto out_free;
 
 	if (!mounted_read_only) {
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		c->ileb_buf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 		c->ileb_buf = vmalloc(c->leb_size);
+#endif
 		if (!c->ileb_buf)
 			goto out_free;
 	}
@@ -1475,8 +1486,13 @@ out_cbuf:
 	kfree(c->cbuf);
 out_free:
 	kfree(c->bu.buf);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ileb_buf);
+	kfree(c->sbuf);
+#else
 	vfree(c->ileb_buf);
 	vfree(c->sbuf);
+#endif
 	kfree(c->bottom_up_buf);
 	ubifs_debugging_exit(c);
 	return err;
@@ -1513,8 +1529,13 @@ static void ubifs_umount(struct ubifs_info *c)
 	kfree(c->rcvrd_mst_node);
 	kfree(c->mst_node);
 	kfree(c->bu.buf);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ileb_buf);
+	kfree(c->sbuf);
+#else
 	vfree(c->ileb_buf);
 	vfree(c->sbuf);
+#endif
 	kfree(c->bottom_up_buf);
 	ubifs_debugging_exit(c);
 }
@@ -1592,7 +1613,11 @@ static int ubifs_remount_rw(struct ubifs_info *c)
 			goto out;
 	}
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	c->ileb_buf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 	c->ileb_buf = vmalloc(c->leb_size);
+#endif
 	if (!c->ileb_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -1619,7 +1644,11 @@ static int ubifs_remount_rw(struct ubifs_info *c)
 	}
 	wake_up_process(c->bgt);
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	c->orph_buf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 	c->orph_buf = vmalloc(c->leb_size);
+#endif
 	if (!c->orph_buf) {
 		err = -ENOMEM;
 		goto out;
@@ -1656,14 +1685,22 @@ static int ubifs_remount_rw(struct ubifs_info *c)
 	return err;
 
 out:
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->orph_buf);
+#else
 	vfree(c->orph_buf);
+#endif
 	c->orph_buf = NULL;
 	if (c->bgt) {
 		kthread_stop(c->bgt);
 		c->bgt = NULL;
 	}
 	free_wbufs(c);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ileb_buf);
+#else
 	vfree(c->ileb_buf);
+#endif
 	c->ileb_buf = NULL;
 	ubifs_lpt_free(c, 1);
 	c->remounting_rw = 0;
@@ -1707,9 +1744,17 @@ static void ubifs_remount_ro(struct ubifs_info *c)
 		ubifs_ro_mode(c, err);
 
 	free_wbufs(c);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->orph_buf);
+#else
 	vfree(c->orph_buf);
+#endif
 	c->orph_buf = NULL;
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ileb_buf);
+#else
 	vfree(c->ileb_buf);
+#endif
 	c->ileb_buf = NULL;
 	ubifs_lpt_free(c, 1);
 	err = dbg_check_space_info(c);

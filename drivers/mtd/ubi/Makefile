@@ -4,4 +4,7 @@ ubi-y += vtbl.o vmt.o upd.o build.o cdev.o kapi.o eba.o io.o wl.o scan.o
 ubi-y += misc.o
 
 ubi-$(CONFIG_MTD_UBI_DEBUG) += debug.o
-obj-$(CONFIG_MTD_UBI_GLUEBI) += gluebi.o
+ubi-$(CONFIG_MTD_UBI_GLUEBI) += gluebi.o
+
+obj-$(CONFIG_MTD_UBI_BLKDEVS) += bdev.o
+obj-$(CONFIG_MTD_UBI_BLOCK) += ubiblk.o

@@ -1499,6 +1499,9 @@ irqreturn_t musb_interrupt(struct musb *musb)
 	u8		devctl, power;
 	int		ep_num;
 	u32		reg;
+#ifdef CONFIG_USB_MUSB_PERIPHERAL_HOTPLUG
+	uh_alive();
+#endif
 
 	devctl = musb_readb(musb->mregs, MUSB_DEVCTL);
 	power = musb_readb(musb->mregs, MUSB_POWER);

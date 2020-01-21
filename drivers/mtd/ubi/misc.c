@@ -67,7 +67,11 @@ int ubi_check_volume(struct ubi_device *ubi, int vol_id)
 	if (vol->vol_type != UBI_STATIC_VOLUME)
 		return 0;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	buf = kmalloc(vol->usable_leb_size, GFP_KERNEL);
+#else
 	buf = vmalloc(vol->usable_leb_size);
+#endif
 	if (!buf)
 		return -ENOMEM;
 
@@ -86,8 +90,11 @@ int ubi_check_volume(struct ubi_device *ubi, int vol_id)
 			break;
 		}
 	}
-
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(buf);
+#else
 	vfree(buf);
+#endif
 	return err;
 }
 

@@ -1046,6 +1046,42 @@ static inline void cpu_probe_ingenic(struct cpuinfo_mips *c, unsigned int cpu)
 	}
 }
 
+static inline void cpu_probe_ingenic(struct cpuinfo_mips *c, unsigned int cpu)
+{
+	decode_configs(c);
+
+	c->options &= ~MIPS_CPU_COUNTER; /* JZRISC does not implement the CP0 counter. */
+	switch (c->processor_id & 0xff00) {
+	case PRID_IMP_JZRISC:
+
+		c->cputype = CPU_JZRISC;
+		c->isa_level = MIPS_CPU_ISA_M32R1;
+		c->tlbsize = 32;
+
+		__cpu_name[cpu] = "Ingenic JZRISC";
+
+#if 0
+		if (__cpu_has_fpu())
+		{
+			unsigned int tmp,mask;
+			mask = 1 << 26;
+			c->options |= MIPS_CPU_FPU;
+			/* Set floating mode to 32*32bit mode */
+			tmp = read_c0_status();
+			tmp &= ~mask;
+			printk("Jz4760 Floating coprocessor work on %s mode\n",
+					(tmp & mask) ? "32*64bit" : "32*32bit");
+			write_c0_status(tmp);
+		}
+
+#endif
+		break;
+	default:
+		panic("Unknown Ingenic Processor ID!");
+		break;
+	}
+}
+
 const char *__cpu_name[NR_CPUS];
 
 __cpuinit void cpu_probe(void)
@@ -1058,6 +1094,8 @@ __cpuinit void cpu_probe(void)
 	c->cputype	= CPU_UNKNOWN;
 
 	c->processor_id = read_c0_prid();
+
+
 	switch (c->processor_id & 0xff0000) {
 	case PRID_COMP_LEGACY:
 		cpu_probe_legacy(c, cpu);

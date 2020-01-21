@@ -18,6 +18,10 @@
 
 #include <asm/div64.h>
 
+#ifndef DELETE
+#define DELETE 0
+#endif
+
 #define MTD_CHAR_MAJOR 90
 #define MTD_BLOCK_MAJOR 31
 #define MAX_MTD_DEVICES 32
@@ -105,12 +109,14 @@ struct mtd_info {
 	u_char type;
 	uint32_t flags;
 	uint64_t size;	 // Total size of the MTD
+	uint64_t rl_size;	 // Total valid size of the MTD
 
 	/* "Major" erase size for the device. Naïve users may take this
 	 * to be the only erase size available, or may use the more detailed
 	 * information below if they desire
 	 */
 	uint32_t erasesize;
+	uint32_t rl_erasesize;
 	/* Minimal writable flash unit size. In case of NOR flash it is 1 (even
 	 * though individual bits can be cleared), in case of NAND flash it is
 	 * one NAND page (or half, or one-fourths of it), in case of ECC-ed NOR
@@ -134,7 +140,7 @@ struct mtd_info {
 	/* Masks based on erasesize_shift and writesize_shift */
 	unsigned int erasesize_mask;
 	unsigned int writesize_mask;
-
+#endif
 	// Kernel-only stuff starts here.
 	const char *name;
 	int index;
@@ -256,36 +262,37 @@ static inline struct mtd_info *dev_to_mtd(struct device *dev)
 	return dev ? dev_get_drvdata(dev) : NULL;
 }
 
+#if 1
 static inline uint32_t mtd_div_by_eb(uint64_t sz, struct mtd_info *mtd)
 {
-	if (mtd->erasesize_shift)
-		return sz >> mtd->erasesize_shift;
+  //if (mtd->erasesize_shift)
+  //	return sz >> mtd->erasesize_shift;
 	do_div(sz, mtd->erasesize);
 	return sz;
 }
 
 static inline uint32_t mtd_mod_by_eb(uint64_t sz, struct mtd_info *mtd)
 {
-	if (mtd->erasesize_shift)
-		return sz & mtd->erasesize_mask;
+  //	if (mtd->erasesize_shift)
+  //		return sz & mtd->erasesize_mask;
 	return do_div(sz, mtd->erasesize);
 }
 
 static inline uint32_t mtd_div_by_ws(uint64_t sz, struct mtd_info *mtd)
 {
-	if (mtd->writesize_shift)
-		return sz >> mtd->writesize_shift;
+  //	if (mtd->writesize_shift)
+  //		return sz >> mtd->writesize_shift;
 	do_div(sz, mtd->writesize);
 	return sz;
 }
 
 static inline uint32_t mtd_mod_by_ws(uint64_t sz, struct mtd_info *mtd)
 {
-	if (mtd->writesize_shift)
-		return sz & mtd->writesize_mask;
+  //	if (mtd->writesize_shift)
+  //		return sz & mtd->writesize_mask;
 	return do_div(sz, mtd->writesize);
 }
-
+#endif
 	/* Kernel-side ioctl definitions */
 
 extern int add_mtd_device(struct mtd_info *mtd);

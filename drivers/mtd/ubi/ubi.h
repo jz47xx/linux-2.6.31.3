@@ -39,10 +39,18 @@
 #include <linux/notifier.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/ubi.h>
-
 #include "ubi-media.h"
 #include "scan.h"
 #include "debug.h"
+
+/* dbg printk by ylyuan */
+//#define DEBUG_UBI
+#ifdef DEBUG_UBI
+#define dprintk(fmt, ...) printk(KERN_ERR "UBI DEBUG: %s: " fmt "\n", \
+				 __func__, ##__VA_ARGS__)
+#else
+#define	dprintk(n,x...)
+#endif
 
 /* Maximum number of supported UBI devices */
 #define UBI_MAX_DEVICES 32
@@ -274,6 +282,15 @@ struct ubi_volume {
 	unsigned int updating:1;
 	unsigned int changing_leb:1;
 	unsigned int direct_writes:1;
+
+	int bdev_mode; //add by Nancy
+};
+
+//add by ylyuan, for ubi block device
+struct vol_notifier {
+	void (*add)(struct ubi_volume *vol);
+	void (*remove)(struct ubi_volume *vol);
+	struct list_head list;
 };
 
 /**
@@ -385,6 +402,7 @@ struct ubi_wl_entry;
  */
 struct ubi_device {
 	struct cdev cdev;
+	int bdev_major; // add by Nancy
 	struct device dev;
 	int ubi_num;
 	char ubi_name[sizeof(UBI_NAME_STR)+5];

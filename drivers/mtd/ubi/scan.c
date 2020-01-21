@@ -313,7 +313,11 @@ static int compare_lebs(struct ubi_device *ubi, const struct ubi_scan_leb *seb,
 	/* Read the data of the copy and check the CRC */
 
 	len = be32_to_cpu(vid_hdr->data_size);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	buf = kmalloc(len, GFP_KERNEL);
+#else
 	buf = vmalloc(len);
+#endif
 	if (!buf) {
 		err = -ENOMEM;
 		goto out_free_vidh;
@@ -336,7 +340,11 @@ static int compare_lebs(struct ubi_device *ubi, const struct ubi_scan_leb *seb,
 		bitflips = !!err;
 	}
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(buf);
+#else
 	vfree(buf);
+#endif
 	ubi_free_vid_hdr(ubi, vh);
 
 	if (second_is_newer)
@@ -347,7 +355,11 @@ static int compare_lebs(struct ubi_device *ubi, const struct ubi_scan_leb *seb,
 	return second_is_newer | (bitflips << 1) | (corrupted << 2);
 
 out_free_buf:
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(buf);
+#else
 	vfree(buf);
+#endif
 out_free_vidh:
 	ubi_free_vid_hdr(ubi, vh);
 	return err;

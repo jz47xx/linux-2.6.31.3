@@ -35,6 +35,19 @@ config WM8350_POWER
         help
           Say Y here to enable support for the power management unit
 	  provided by the Wolfson Microelectronics WM8350 PMIC.
+config PMU_ACT8600_SUPPORT
+        tristate "pmu act8600 support for ingenic soc"
+	depends on SOC_JZ4770
+        help
+          Say Y here to enable act8930 for power supply class
+          and drivers.
+
+config PMU_ACT8930_SUPPORT
+        tristate "pmu act8930 support for ingenic soc"
+	depends on SOC_JZ4760B
+        help
+          Say Y here to enable act8930 for power supply class
+          and drivers.
 
 config BATTERY_DS2760
 	tristate "DS2760 battery driver (HP iPAQ & others)"

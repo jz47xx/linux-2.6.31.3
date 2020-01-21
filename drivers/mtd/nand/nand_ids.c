@@ -1,5 +1,5 @@
 /*
- *  drivers/mtd/nandids.c
+ *  drivers/mtd/nand/nand_ids.c
  *
  *  Copyright (C) 2002 Thomas Gleixner (tglx@linutronix.de)
  *
