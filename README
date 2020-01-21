@@ -1,3 +1,168 @@
+*********************************************************************
+Steps to build the kernel:
+
+Download and install the cross toolchain gcc version 4 for Linux 2.6.
+
+$ cd /opt
+$ tar xjf mipseltools-gcc412-glibc261.tar.bz2
+$ export PATH=/opt/mipseltools-gcc412-glibc261/bin:$PATH
+
+Download the linux kernel tarball linux-2.6.24.3.tar.bz2 and unpack it:
+
+$ tar xjf linux-2.6.31.3.tar.bz2
+
+Download the latest kernel patch and patch it to the kernel tree:
+
+$ cd linux-2.6.31.3
+$ gzip -cd ../linux-2.6.31.3-jz-yyyymmdd.patch.gz | patch -p1
+
+Make defconfig of the JZSOC based platform, eg:
+$ make lepus60b_defconfig (JZ4760B based LEPUS board)
+or
+$ make lepus_defconfig (JZ4760 based LEPUS board)
+or
+$ make cetus_defconfig  (JZ4755 based CETUS board)
+or
+$ make apus_defconfig (JZ4750 based APUS board)
+or
+$ make pavo_defconfig (JZ4740 based PAVO board)
+or
+$ make pmp_defconfig  (JZ4730 based PMP board)
+
+
+
+Build the kernel:
+
+$ make xconfig 
+or
+$ make menuconfig
+$ make uImage
+or
+# make zImage
+or
+# make modules
+
+
+*********************************************************************
+linux-2.6.31.3-jz-20110420-r821.patch.gz
+ * init version for JZ4760B on LEPUS board
+ * add system build on SD card or inand for APUS¡¢CETUS and LEPUS board
+ * add nand_oob_218 layout mode for support 218 Bytes of oobsize.
+ * change the method of make yaffs file system on LEPUS borad for JZ4760B
+ * support new nand type such as K9GAG0800D and other 8k bytes  page nand
+ * add otg gadget function to be removed by WIN7 or VISTA operation system support 
+ * add opt function for jz4760B
+ * change the pll source for ohci from PLL0 to PLL1
+ * add fpu support for JZ4760B
+ 
+ 
+linux-2.6.31.3-20101015.patch.bz2  
+ * change mtd partitions
+ * add support for oobdata 4-bit bch
+ * add apus CIM support
+ * fixed mono double rated bug when user application use SNDCTL_DSP_CHANNELS instead of SNDCTL_DSP_STEREO
+ * add the bch alogrithm (4bit n8) for yaffs2 to do the oob correct
+ * Optimize the Odd syndromes calculate for decoder
+ * fix the second insmod g_ether.ko bug
+ * board-lepus: add tf card insert/remove wakeup support
+ * lcd suspend: use quick disable instead of regular disable
+ * fix SD card suspend/resume support
+ * fix an ov7690 bug and add apus support
+ * add DMA burst 64-byte support in msc module
+ * use RTC for reboot command
+ * add Capacitive touch screen driver
+ * use the capacitive touchscreen driver as default touchscreen driver 
+
+linux-2.6.31.3-20100724.patch.bz2  
+ * Fixed start/stop UHC routines on JZ4740.
+ * Added gadget controller number for JZ4750D.
+ * Remarked old power leagcy API.
+ * Added support of i2c bus driver for jz4750/jz4750d.
+ * Removed pcm_natvie.c.
+ * Fixed a bug when a block cache is allocated for every partition which works over mtdblock-jz, and
+   disable nand suspend/resume. 
+ * Fixed an IO coherent bug in __do_fault path.
+ * Shutdown the board by poweroff command and remove poweroff interface in sysfs.
+ * Enable JZ47XX RTC driver and modified for Mplayer running on JZSOC.
+ * Correct GPIO_USB_DETE -> GPIOC15 in apus.
+ * New simple I2C driver & Userspace driver & examples for JZ4750.
+ * Fixed NAND LB Cache enable/flush/control bugs.
+ * Corrected 2 bugs when 512-byte pagesize nand using yaffs1.
+ * Fixed wake up problems in userspace sleep()/nanosleep().
+ * Added MEMPAGEWRITE ioctl to support nandwrite_mlc utils.
+ * Fixed kernel bug.
+   Do not call tty_flip_buffer_push() in tasklet context,
+   We use workqueue instead.
+ * Fixed MTD partition size calculation error. 
+ * Added IPU MM support option.
+ * Defaut input_touchscreen is y, deleted JZ_TPANEL under char/jzchar.
+ * Fixed missing spin_unlock_irq when rtc is busy.
+ * Added the Ingenic NFTL source code.
+ * revert  yaffs_ecc.c
+ * Clean Files:
+    poweroff.c:
+        Poweroff routines should be handled by APP.
+
+    sensor.c:
+        An simple i2c interface used to control sensor.
+        Replaced by Simple I2C Driver.                 
+                                                       
+    udc_hotplug.c:                                     
+        Replaced by drivers/usb/gadget/udc_hotplug.c   
+                                                       
+    cim.c cim.h:                                       
+        Replaced by drivers/media/jz47xx_cim.*
+ * add REG_MSC_RDTO(MSC_ID) = 0xffff
+ * Add new version of JZ475X LCD Driver
+ * Support JZ4755
+ * All DACs should be powered on when using SVIDEO
+ * DMA Descriptor should be writebacked and invailded.
+ * Add enable_delay_in_ms.
+ * Remove PM IRQ routines.
+ * Add GPIO PM Key Driver.
+ * Add framebuffer common routines.
+ * Add RGB->YUV Routines.
+ * Add CPUFREQ options.
+ * Add MUSB OTG Driver.
+ * Add OTG ID PIN Routines.
+ * add support for JZ4760.
+ * added 4760 boot from MMC/SD support.
+ * add jz_pm_hibernate
+ * added Write enable patter register
+ * change apus_defconfig to support SDIO by default
+ * Modify Dynamic change i2c speed support.
+ * wake up msc driver when the card is removed
+ * Use 800x480 LCD config for lepus board
+ 
+linux-2.6.31.3-20100304.patch.bz2
+ * Init version, ported drviers and platform supports from linux-2.6.24.3-jz to linux-2.6.31.3.  
+ * Fixed start/stop UHC routines on JZ4740.
+ * Added gadget controller number for JZ4750D.
+ * Remarked old power leagcy API.
+ * Added support of i2c bus driver for jz4750/jz4750d.
+ * Removed pcm_natvie.c.
+ * Fixed a bug when a block cache is allocated for every partition which works over mtdblock-jz, and
+   disable nand suspend/resume. 
+ * Fixed an IO coherent bug in __do_fault path.
+ * Shutdown the board by poweroff command and remove poweroff interface in sysfs.
+ * Enable JZ47XX RTC driver and modified for Mplayer running on JZSOC.
+ * Correct GPIO_USB_DETE -> GPIOC15 in apus.
+ * New simple I2C driver & Userspace driver & examples for JZ4750.
+ * Corrected 2 bugs when 512-byte pagesize nand using yaffs1.
+ * Fixed NAND LB Cache enable/flush/control bugs.
+ * Fixed wake up problems in userspace sleep()/nanosleep().
+ * Added MEMPAGEWRITE ioctl to support nandwrite_mlc utils.
+ * Fixed kernel bug.
+   Do not call tty_flip_buffer_push() in tasklet context,
+   We use workqueue instead.
+ * Fixed MTD partition size calculation error. 
+ * Added IPU MM support option.
+ * Defaut input_touchscreen is y, deleted JZ_TPANEL under char/jzchar.
+ * Fixed missing spin_unlock_irq when rtc is busy.
+ * Added the Ingenic NFTL source code.
+
+
+*********************************************************************
 	Linux kernel release 2.6.xx <http://kernel.org/>
 
 These are the release notes for Linux version 2.6.  Read them carefully,
