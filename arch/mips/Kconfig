@@ -2361,6 +2361,23 @@ endif
 
 endmenu
 
+menu "CPU Frequency scaling"
+
+config CPU_FREQ_JZ
+        tristate "CPUfreq driver for JZ CPUs"
+        depends on JZSOC
+        default n
+        help
+          This enables the CPUfreq driver for JZ CPUs.
+
+          If in doubt, say N.
+
+if (CPU_FREQ_JZ)
+source "drivers/cpufreq/Kconfig"
+endif
+
+endmenu
+
 menu "Power management options"
 
 config ARCH_HIBERNATION_POSSIBLE
