@@ -1,3 +1,4 @@
+
 /*
  * MUSB OTG driver peripheral support
  *
@@ -299,7 +300,7 @@ static void txstate(struct musb *musb, struct musb_request *req)
 			csr);
 
 #ifndef	CONFIG_MUSB_PIO_ONLY
-	if (is_dma_capable() && musb_ep->dma) {
+	if (is_dma_capable() && musb_ep->dma && request->dma % 4 == 0) {
 		struct dma_controller	*c = musb->dma_controller;
 
 		use_dma = (request->dma != DMA_ADDR_INVALID);
@@ -626,7 +627,7 @@ static void rxstate(struct musb *musb, struct musb_request *req)
 		len = musb_readw(epio, MUSB_RXCOUNT);
 		if (request->actual < request->length) {
 #ifdef CONFIG_USB_INVENTRA_DMA
-			if (is_dma_capable() && musb_ep->dma) {
+			if (is_dma_capable() && musb_ep->dma && request->dma % 4 == 0) {
 				struct dma_controller	*c;
 				struct dma_channel	*channel;
 				int			use_dma = 0;

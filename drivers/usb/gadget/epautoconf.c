@@ -139,6 +139,7 @@ ep_matches (
 		if (!gadget->is_dualspeed && max > 64)
 			return 0;
 		/* FALLTHROUGH */
+		break;
 
 	case USB_ENDPOINT_XFER_ISOC:
 		/* ISO:  limit 1023 bytes full speed, 1024 high speed */

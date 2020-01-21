@@ -520,4 +520,10 @@ config TOUCHSCREEN_W90X900
 	  To compile this driver as a module, choose M here: the
 	  module will be called w90p910_ts.
 
+config TOUCHSCREEN_FT5X0X
+        tristate "FocalTech FT5X0X TouchScreen driver"
+        depends on I2C
+        help
+          lepus FocalTech FT5X0X TouchSreen Driver implemented by Ingenic.
+
 endif
