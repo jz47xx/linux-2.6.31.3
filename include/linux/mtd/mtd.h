@@ -119,6 +119,8 @@ struct mtd_info {
 	 * 1 or larger.
 	 */
 	uint32_t writesize;
+	uint32_t freesize;
+	uint32_t validsize;
 
 	uint32_t oobsize;   // Amount of OOB data per block (e.g. 16)
 	uint32_t oobavail;  // Available OOB bytes per block

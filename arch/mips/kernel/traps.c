@@ -713,7 +713,8 @@ static void do_trap_or_bp(struct pt_regs *regs, unsigned int code,
 	switch (code) {
 	case BRK_OVERFLOW:
 	case BRK_DIVZERO:
-		scnprintf(b, sizeof(b), "%s instruction in kernel code", str);
+		scnprintf(b, sizeof(b), "%s(%d) instruction in kernel code"
+			  , str, code);
 		die_if_kernel(b, regs);
 		if (code == BRK_DIVZERO)
 			info.si_code = FPE_INTDIV;
@@ -744,7 +745,8 @@ static void do_trap_or_bp(struct pt_regs *regs, unsigned int code,
 		force_sig(SIGTRAP, current);
 		break;
 	default:
-		scnprintf(b, sizeof(b), "%s instruction in kernel code", str);
+		scnprintf(b, sizeof(b), "%s(%d) instruction in kernel code"
+			  , str, code);
 		die_if_kernel(b, regs);
 		force_sig(SIGTRAP, current);
 	}
@@ -766,6 +768,26 @@ asmlinkage void do_bp(struct pt_regs *regs)
 	bcode = ((opcode >> 6) & ((1 << 20) - 1));
 	if (bcode >= (1 << 10))
 		bcode >>= 10;
+
+	/*
+	 * notify the kprobe handlers, if instruction is likely to
+	 * pertain to them.
+	 */
+#define regs_to_trapnr(regs) ((regs->cp0_cause >> 2) & 0x1f)
+	switch (bcode) {
+	case BRK_KPROBE_BP:
+		if (notify_die(DIE_BREAK, "debug", regs, bcode, regs_to_trapnr(regs), SIGTRAP) == NOTIFY_STOP)
+			return;
+		else
+			break;
+	case BRK_KPROBE_SSTEPBP:
+		if (notify_die(DIE_SSTEPBP, "single_step", regs, bcode, regs_to_trapnr(regs), SIGTRAP) == NOTIFY_STOP)
+			return;
+		else
+			break;
+	default:
+		break;
+	}
 
 	do_trap_or_bp(regs, bcode, "Break");
 	return;

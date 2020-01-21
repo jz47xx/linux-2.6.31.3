@@ -4,6 +4,8 @@ config MIPS
 	select HAVE_IDE
 	select HAVE_OPROFILE
 	select HAVE_ARCH_KGDB
+	select HAVE_KPROBES
+	select HAVE_KRETPROBES
 	# Horrible source of confusion.  Die, die, die ...
 	select EMBEDDED
 	select RTC_LIB
@@ -2305,6 +2307,23 @@ config MIPS32_N32
 config BINFMT_ELF32
 	bool
 	default y if MIPS32_O32 || MIPS32_N32
+
+endmenu
+
+menu "CPU Frequency scaling"
+
+config CPU_FREQ_JZ
+        tristate "CPUfreq driver for JZ CPUs"
+        depends on JZSOC
+        default n
+        help
+          This enables the CPUfreq driver for JZ CPUs.
+
+          If in doubt, say N.
+
+if (CPU_FREQ_JZ)
+source "drivers/cpufreq/Kconfig"
+endif
 
 endmenu
 

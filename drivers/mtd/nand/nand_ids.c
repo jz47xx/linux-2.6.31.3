@@ -10,6 +10,10 @@
  */
 #include <linux/module.h>
 #include <linux/mtd/nand.h>
+
+#define LP_OPTIONS (NAND_SAMSUNG_LP_OPTIONS | NAND_NO_READRDY | NAND_NO_AUTOINCR)
+#define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
+
 /*
 *	Chip ID list
 *
@@ -147,8 +151,14 @@ struct nand_manufacturers nand_manuf_ids[] = {
 	{0x0, "Unknown"}
 };
 
+int get_flash_num(void)
+{
+	return (sizeof(nand_flash_ids) / sizeof(struct nand_flash_dev));
+}
+
 EXPORT_SYMBOL(nand_manuf_ids);
 EXPORT_SYMBOL(nand_flash_ids);
+EXPORT_SYMBOL(get_flash_num);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Thomas Gleixner <tglx@linutronix.de>");

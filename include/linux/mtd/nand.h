@@ -128,6 +128,11 @@ typedef enum {
 	NAND_ECC_HW_SYNDROME,
 } nand_ecc_modes_t;
 
+typedef enum {
+	NAND_DATA_HW_BCH,
+	NAND_OOB_HW_BCH,
+} hw_bch_obj;
+
 /*
  * Constants for Hardware ECC
  */

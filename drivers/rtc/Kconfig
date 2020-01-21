@@ -411,6 +411,7 @@ config RTC_DRV_DS1216
 	help
 	  If you say yes here you get support for the Dallas DS1216 RTC chips.
 
+
 config RTC_DRV_DS1286
 	tristate "Dallas DS1286"
 	help
@@ -758,5 +759,12 @@ config RTC_DRV_PS3
 
 	  This driver can also be built as a module. If so, the module
 	  will be called rtc-ps3.
+
+config RTC_DRV_JZ4760B
+	tristate "jz4760b rtc"
+	depends on SOC_JZ4760B
+	help
+	  If you say yes here you get support for the Dallas DS1216 RTC chips.
+
 
 endif # RTC_CLASS

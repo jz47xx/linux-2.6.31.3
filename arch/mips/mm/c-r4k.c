@@ -551,6 +551,22 @@ static void r4k_flush_data_cache_page(unsigned long addr)
 			        1);
 }
 
+void (*flush_insn_cache_page)(unsigned long addr);
+
+static inline void local_r4k_flush_insn_cache_page(void * addr)
+{
+	r4k_blast_icache_page((unsigned long) addr);
+}
+
+static void r4k_flush_insn_cache_page(unsigned long addr)
+{
+	if (in_atomic())
+		local_r4k_flush_insn_cache_page((void *)addr);
+	else
+		r4k_on_each_cpu(local_r4k_flush_insn_cache_page, (void *) addr,
+			        1);
+}
+
 struct flush_icache_range_args {
 	unsigned long start;
 	unsigned long end;
@@ -1438,6 +1454,7 @@ void __cpuinit r4k_cache_init(void)
 	flush_data_cache_page	= r4k_flush_data_cache_page;
 	flush_icache_range	= r4k_flush_icache_range;
 	local_flush_icache_range	= local_r4k_flush_icache_range;
+	flush_insn_cache_page	= r4k_flush_insn_cache_page;
 
 #if defined(CONFIG_DMA_NONCOHERENT)
 	if (coherentio) {

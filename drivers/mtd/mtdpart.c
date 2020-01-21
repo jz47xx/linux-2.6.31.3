@@ -528,6 +528,7 @@ int add_mtd_partitions(struct mtd_info *master,
 		       int nbparts)
 {
 	struct mtd_part *slave;
+	struct mtd_partition *temp_part;
 	uint64_t cur_offset = 0;
 	int i;
 
@@ -537,7 +538,8 @@ int add_mtd_partitions(struct mtd_info *master,
 		slave = add_one_partition(master, parts + i, i, cur_offset);
 		if (!slave)
 			return -ENOMEM;
-		cur_offset = slave->offset + slave->mtd.size;
+		temp_part = parts + i + 1;
+		cur_offset = temp_part->offset;
 	}
 
 	return 0;

@@ -629,6 +629,8 @@ static void mmc_sd_resume(struct mmc_host *host)
 static const struct mmc_bus_ops mmc_sd_ops = {
 	.remove = mmc_sd_remove,
 	.detect = mmc_sd_detect,
+//	.sysfs_add = mmc_sd_sysfs_add,
+//	.sysfs_remove = mmc_sd_sysfs_remove,
 	.suspend = mmc_sd_suspend,
 	.resume = mmc_sd_resume,
 };
