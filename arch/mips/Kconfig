@@ -943,7 +943,7 @@ config EARLY_PRINTK
 	  unless you want to debug such a crash.
 
 config SYS_HAS_EARLY_PRINTK
-	bool
+	bool "early printk"
 
 config HOTPLUG_CPU
 	bool "Support for hot-pluggable CPUs"
@@ -2305,6 +2305,23 @@ config MIPS32_N32
 config BINFMT_ELF32
 	bool
 	default y if MIPS32_O32 || MIPS32_N32
+
+endmenu
+
+menu "CPU Frequency scaling"
+
+config CPU_FREQ_JZ
+        tristate "CPUfreq driver for JZ CPUs"
+        depends on JZSOC
+        default n
+        help
+          This enables the CPUfreq driver for JZ CPUs.
+
+          If in doubt, say N.
+
+if (CPU_FREQ_JZ)
+source "drivers/cpufreq/Kconfig"
+endif
 
 endmenu
 

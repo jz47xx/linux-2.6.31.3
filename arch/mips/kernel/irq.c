@@ -73,10 +73,17 @@ void free_irqno(unsigned int irq)
  * 'what should we do if we get a hw irq event on an illegal vector'.
  * each architecture has to answer this themselves.
  */
+void (*ack_bad_irq_callback)(unsigned int irq) = 0;
+
 void ack_bad_irq(unsigned int irq)
 {
+	if (ack_bad_irq_callback) {
+		ack_bad_irq_callback(irq);
+	}
 	smtc_im_ack_irq(irq);
 	printk("unexpected IRQ # %d\n", irq);
+
+	while (1);
 }
 
 atomic_t irq_err_count;

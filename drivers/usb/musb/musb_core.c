@@ -977,10 +977,13 @@ static void musb_shutdown(struct platform_device *pdev)
 	spin_lock_irqsave(&musb->lock, flags);
 	musb_platform_disable(musb);
 	musb_generic_disable(musb);
+
+#ifdef HAVE_CLK
 	if (musb->clock) {
 		clk_put(musb->clock);
 		musb->clock = NULL;
 	}
+#endif
 	spin_unlock_irqrestore(&musb->lock, flags);
 
 	/* FIXME power down */
@@ -1476,26 +1479,37 @@ static int __init musb_core_init(u16 musb_type, struct musb *musb)
 
 /*-------------------------------------------------------------------------*/
 
-#if defined(CONFIG_ARCH_OMAP2430) || defined(CONFIG_ARCH_OMAP3430)
+#if defined(CONFIG_ARCH_OMAP2430) || defined(CONFIG_ARCH_OMAP3430) || defined (CONFIG_SOC_JZ4760)
 
 static irqreturn_t generic_interrupt(int irq, void *__hci)
 {
 	unsigned long	flags;
-	irqreturn_t	retval = IRQ_NONE;
 	struct musb	*musb = __hci;
 
+	irqreturn_t rv, rv_dma, rv_usb;
+
+	rv = rv_dma = rv_usb = IRQ_NONE;
+
 	spin_lock_irqsave(&musb->lock, flags);
+
+#if defined(CONFIG_USB_INVENTRA_DMA)
+	if (musb->b_dma_share_usb_irq)
+		rv_dma = musb_call_dma_controller_irq(irq, musb);
+#endif
 
 	musb->int_usb = musb_readb(musb->mregs, MUSB_INTRUSB);
 	musb->int_tx = musb_readw(musb->mregs, MUSB_INTRTX);
 	musb->int_rx = musb_readw(musb->mregs, MUSB_INTRRX);
 
 	if (musb->int_usb || musb->int_tx || musb->int_rx)
-		retval = musb_interrupt(musb);
+		rv_usb = musb_interrupt(musb);
 
 	spin_unlock_irqrestore(&musb->lock, flags);
 
-	return retval;
+	rv = (rv_dma == IRQ_HANDLED || rv_usb == IRQ_HANDLED) ?
+		IRQ_HANDLED : IRQ_NONE;
+
+	return rv;
 }
 
 #else
@@ -1854,10 +1868,12 @@ static void musb_free(struct musb *musb)
 	musb_platform_exit(musb);
 	musb_writeb(musb->mregs, MUSB_DEVCTL, 0);
 
+#ifdef HAVE_CLK
 	if (musb->clock) {
 		clk_disable(musb->clock);
 		clk_put(musb->clock);
 	}
+#endif
 
 #ifdef CONFIG_USB_MUSB_OTG
 	put_device(musb->xceiv->dev);
@@ -1927,6 +1943,7 @@ bad_config:
 	musb->set_clock = plat->set_clock;
 	musb->min_power = plat->min_power;
 
+#ifdef HAVE_CLK
 	/* Clock usage is chip-specific ... functional clock (DaVinci,
 	 * OMAP2430), or PHY ref (some TUSB6010 boards).  All this core
 	 * code does is make sure a clock handle is available; platform
@@ -1940,6 +1957,7 @@ bad_config:
 			goto fail;
 		}
 	}
+#endif
 
 	/* The musb_platform_init() call:
 	 *   - adjusts musb->mregs and musb->isr if needed,
@@ -1986,6 +2004,7 @@ bad_config:
 	status = musb_core_init(plat->config->multipoint
 			? MUSB_CONTROLLER_MHDRC
 			: MUSB_CONTROLLER_HDRC, musb);
+
 	if (status < 0)
 		goto fail2;
 
@@ -2057,6 +2076,7 @@ bad_config:
 				? 'B' : 'A'));
 
 	} else /* peripheral is enabled */ {
+
 		MUSB_DEV_MODE(musb);
 		musb->xceiv->default_a = 0;
 		musb->xceiv->state = OTG_STATE_B_IDLE;
@@ -2098,8 +2118,11 @@ fail:
 	dev_err(musb->controller,
 		"musb_init_controller failed with status %d\n", status);
 
+#ifdef HAVE_CLK
 	if (musb->clock)
 		clk_put(musb->clock);
+#endif
+
 	device_init_wakeup(dev, 0);
 	musb_free(musb);
 
@@ -2187,10 +2210,13 @@ static int musb_suspend(struct platform_device *pdev, pm_message_t message)
 		 */
 	}
 
+#ifdef HAVE_CLK
 	if (musb->set_clock)
 		musb->set_clock(musb->clock, 0);
 	else
 		clk_disable(musb->clock);
+#endif
+
 	spin_unlock_irqrestore(&musb->lock, flags);
 	return 0;
 }
@@ -2201,11 +2227,12 @@ static int musb_resume_early(struct platform_device *pdev)
 
 	if (!musb->clock)
 		return 0;
-
+#ifdef HAVE_CLK
 	if (musb->set_clock)
 		musb->set_clock(musb->clock, 1);
 	else
 		clk_enable(musb->clock);
+#endif
 
 	/* for static cmos like DaVinci, register values were preserved
 	 * unless for some reason the whole soc powered down or the USB

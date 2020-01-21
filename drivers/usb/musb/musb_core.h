@@ -438,6 +438,7 @@ struct musb {
 	struct usb_gadget	g;			/* the gadget */
 	struct usb_gadget_driver *gadget_driver;	/* its driver */
 #endif
+	unsigned int b_dma_share_usb_irq;
 
 	struct musb_hdrc_config	*config;
 

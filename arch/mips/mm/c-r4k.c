@@ -1229,7 +1229,9 @@ static void __cpuinit setup_scache(void)
 		loongson2_sc_init();
 		return;
 #endif
-
+	case CPU_JZRISC:
+		sc_present = 0;
+		return;
 	default:
 		if (c->isa_level == MIPS_CPU_ISA_M32R1 ||
 		    c->isa_level == MIPS_CPU_ISA_M32R2 ||

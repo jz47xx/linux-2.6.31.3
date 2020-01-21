@@ -30,6 +30,7 @@
 #define HPET_MINOR		228
 #define FUSE_MINOR		229
 #define KVM_MINOR		232
+#define CIM_MINOR		234        /* JZ CIM for multimedia */
 #define MISC_DYNAMIC_MINOR	255
 
 struct device;

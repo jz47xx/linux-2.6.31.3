@@ -74,3 +74,4 @@ GTAGS
 *.orig
 *~
 \#*#
+*.rej

@@ -6,6 +6,10 @@ musb_hdrc-objs := musb_core.o
 
 obj-$(CONFIG_USB_MUSB_HDRC)	+= musb_hdrc.o
 
+ifeq ($(CONFIG_SOC_JZ4760),y)
+	musb_hdrc-objs	+= jz4760.o
+endif
+
 ifeq ($(CONFIG_ARCH_DAVINCI),y)
 	musb_hdrc-objs	+= davinci.o
 endif
