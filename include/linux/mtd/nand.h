@@ -43,8 +43,8 @@ extern void nand_wait_ready(struct mtd_info *mtd);
  * is supported now. If you add a chip with bigger oobsize/page
  * adjust this accordingly.
  */
-#define NAND_MAX_OOBSIZE	128
-#define NAND_MAX_PAGESIZE	4096
+#define NAND_MAX_OOBSIZE	256
+#define NAND_MAX_PAGESIZE	8192
 
 /*
  * Constants for hardware specific CLE/ALE/NCE function
@@ -53,6 +53,11 @@ extern void nand_wait_ready(struct mtd_info *mtd);
  * bits in one go.
  */
 /* Select the chip by setting nCE to low */
+#define NAND_NCE1		0x08
+#define NAND_NCE2		0x10
+#define NAND_NCE3		0x20
+#define NAND_NCE4		0x40
+
 #define NAND_NCE		0x01
 /* Select the command latch by setting CLE to high */
 #define NAND_CLE		0x02
@@ -373,8 +378,8 @@ struct nand_chip {
 	void		(*read_buf)(struct mtd_info *mtd, uint8_t *buf, int len);
 	int		(*verify_buf)(struct mtd_info *mtd, const uint8_t *buf, int len);
 	void		(*select_chip)(struct mtd_info *mtd, int chip);
-	int		(*block_bad)(struct mtd_info *mtd, loff_t ofs, int getchip);
-	int		(*block_markbad)(struct mtd_info *mtd, loff_t ofs);
+	int		(*block_bad)(struct mtd_info *mtd, loff_mtd_t ofs, int getchip);
+	int		(*block_markbad)(struct mtd_info *mtd, loff_mtd_t ofs);
 	void		(*cmd_ctrl)(struct mtd_info *mtd, int dat,
 				    unsigned int ctrl);
 	int		(*dev_ready)(struct mtd_info *mtd);
@@ -400,6 +405,9 @@ struct nand_chip {
 	int		subpagesize;
 	uint8_t		cellinfo;
 	int		badblockpos;
+
+	int             realplanenum; /* number of planes the NAND has */
+	int             planenum;     /* number of planes operating synchronously */
 
 	nand_state_t	state;
 
@@ -451,7 +459,7 @@ struct nand_flash_dev {
 	char *name;
 	int id;
 	unsigned long pagesize;
-	unsigned long chipsize;
+	u64 chipsize;
 	unsigned long erasesize;
 	unsigned long options;
 };
@@ -539,13 +547,13 @@ struct nand_bbt_descr {
 #define NAND_BBT_SCAN_MAXBLOCKS	4
 
 extern int nand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd);
-extern int nand_update_bbt(struct mtd_info *mtd, loff_t offs);
+extern int nand_update_bbt(struct mtd_info *mtd, loff_mtd_t offs);
 extern int nand_default_bbt(struct mtd_info *mtd);
-extern int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt);
+extern int nand_isbad_bbt(struct mtd_info *mtd, loff_mtd_t offs, int allowbbt);
 extern int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
 			   int allowbbt);
-extern int nand_do_read(struct mtd_info *mtd, loff_t from, size_t len,
-			size_t * retlen, uint8_t * buf);
+extern int nand_do_read(struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len,
+			size_mtd_t * retlen, uint8_t * buf);
 
 /*
 * Constants for oob configuration

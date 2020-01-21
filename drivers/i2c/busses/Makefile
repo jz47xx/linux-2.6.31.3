@@ -3,6 +3,8 @@
 #
 
 # PC SMBus host controller drivers
+#
+obj-$(CONFIG_I2C_JZ47XX)	+= i2c-jz47xx.o
 obj-$(CONFIG_I2C_ALI1535)	+= i2c-ali1535.o
 obj-$(CONFIG_I2C_ALI1563)	+= i2c-ali1563.o
 obj-$(CONFIG_I2C_ALI15X3)	+= i2c-ali15x3.o

@@ -615,6 +615,24 @@ config VIDEO_VINO
 	  Say Y here to build in support for the Vino video input system found
 	  on SGI Indy machines.
 
+config VIDEO_JZ4730_CIM
+	tristate 'JzSOC Camera Interface Module (CIM) support'
+	depends on VIDEO_V4L2 && FB_JZSOC && SOC_JZ4730
+	select VIDEO_JZ_SENSOR
+
+config VIDEO_JZ4740_CIM
+	tristate 'JzSOC Camera Interface Module (CIM) support'
+	depends on VIDEO_V4L2 && FB_JZSOC && SOC_JZ4740
+	select VIDEO_JZ_SENSOR
+
+config VIDEO_JZ4750_CIM
+	tristate 'JzSOC Camera Interface Module (CIM) support'
+	depends on VIDEO_V4L2 && FB_JZSOC && (SOC_JZ4750 || SOC_JZ4750D)
+	select VIDEO_JZ_SENSOR
+
+config VIDEO_JZ_SENSOR
+	tristate "Jz generic camera sensor driver"
+
 config VIDEO_STRADIS
 	tristate "Stradis 4:2:2 MPEG-2 video driver  (EXPERIMENTAL)"
 	depends on EXPERIMENTAL && PCI && VIDEO_V4L1 && VIRT_TO_BUS

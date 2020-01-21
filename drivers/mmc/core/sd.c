@@ -109,7 +109,13 @@ static int mmc_decode_csd(struct mmc_card *card)
 
 		e = UNSTUFF_BITS(resp, 47, 3);
 		m = UNSTUFF_BITS(resp, 62, 12);
+
+#ifdef CONFIG_JZ4750_BOOT_FROM_MSC0
 		csd->capacity	  = (1 + m) << (e + 2);
+		csd->capacity	  -= 16384;
+#else
+		csd->capacity	  = (1 + m) << (e + 2);
+#endif
 
 		csd->read_blkbits = UNSTUFF_BITS(resp, 80, 4);
 		csd->read_partial = UNSTUFF_BITS(resp, 79, 1);
@@ -137,7 +143,13 @@ static int mmc_decode_csd(struct mmc_card *card)
 		csd->cmdclass	  = UNSTUFF_BITS(resp, 84, 12);
 
 		m = UNSTUFF_BITS(resp, 48, 22);
+
+#ifdef CONFIG_JZ4750_BOOT_FROM_MSC0
 		csd->capacity     = (1 + m) << 10;
+		csd->capacity	 -= 16384;
+#else
+		csd->capacity     = (1 + m) << 10;
+#endif
 
 		csd->read_blkbits = 9;
 		csd->read_partial = 0;
@@ -268,9 +280,11 @@ static int mmc_switch_hs(struct mmc_card *card)
 		goto out;
 
 	if ((status[16] & 0xF) != 1) {
+#if 0
 		printk(KERN_WARNING "%s: Problem switching card "
 			"into high-speed mode!\n",
 			mmc_hostname(card->host));
+#endif
 	} else {
 		mmc_card_set_highspeed(card);
 		mmc_set_timing(card->host, MMC_TIMING_SD_HS);

@@ -541,10 +541,10 @@ void put_mtd_device(struct mtd_info *mtd)
  */
 
 int default_mtd_writev(struct mtd_info *mtd, const struct kvec *vecs,
-		       unsigned long count, loff_t to, size_t *retlen)
+		       unsigned long count, loff_mtd_t to, size_mtd_t *retlen)
 {
 	unsigned long i;
-	size_t totlen = 0, thislen;
+	size_mtd_t totlen = 0, thislen;
 	int ret = 0;
 
 	if(!mtd->write) {

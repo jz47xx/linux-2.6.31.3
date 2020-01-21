@@ -37,6 +37,10 @@
 #include <linux/smp_lock.h>
 #include <linux/jiffies.h>
 #include <asm/uaccess.h>
+#include "busses/i2c-jz47xx.h"
+
+
+extern unsigned long sub_addr;
 
 static struct i2c_driver i2cdev_driver;
 
@@ -62,8 +66,8 @@ static DEFINE_SPINLOCK(i2c_dev_list_lock);
 static struct i2c_dev *i2c_dev_get_by_minor(unsigned index)
 {
 	struct i2c_dev *i2c_dev;
-
 	spin_lock(&i2c_dev_list_lock);
+
 	list_for_each_entry(i2c_dev, &i2c_dev_list, list) {
 		if (i2c_dev->adap->nr == index)
 			goto found;
@@ -138,7 +142,6 @@ static ssize_t i2cdev_read (struct file *file, char __user *buf, size_t count,
 {
 	char *tmp;
 	int ret;
-
 	struct i2c_client *client = (struct i2c_client *)file->private_data;
 
 	if (count > 8192)
@@ -169,8 +172,10 @@ static ssize_t i2cdev_write (struct file *file, const char __user *buf, size_t c
 		count = 8192;
 
 	tmp = kmalloc(count,GFP_KERNEL);
+
 	if (tmp==NULL)
 		return -ENOMEM;
+
 	if (copy_from_user(tmp,buf,count)) {
 		kfree(tmp);
 		return -EFAULT;
@@ -422,12 +427,23 @@ static long i2cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case I2C_RETRIES:
 		client->adapter->retries = arg;
 		break;
+
 	case I2C_TIMEOUT:
 		/* For historical reasons, user-space sets the timeout
 		 * value in units of 10 ms.
 		 */
 		client->adapter->timeout = msecs_to_jiffies(arg * 10);
 		break;
+
+	case I2C_SET_SUB_ADDRESS:
+		sub_addr = *(unsigned long *)arg;
+		break;
+
+	case I2C_SET_CLOCK:
+		arg = *(unsigned long *)arg;
+		i2c_jz_setclk(arg);
+		break;
+
 	default:
 		/* NOTE:  returning a fault code here could cause trouble
 		 * in buggy userspace code.  Some old kernel bugs returned
@@ -474,6 +490,7 @@ static int i2cdev_open(struct inode *inode, struct file *file)
 		goto out;
 	}
 	snprintf(client->name, I2C_NAME_SIZE, "i2c-dev %d", adap->nr);
+
 	client->driver = &i2cdev_driver;
 
 	client->adapter = adap;

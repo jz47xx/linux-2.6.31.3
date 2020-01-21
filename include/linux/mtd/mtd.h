@@ -92,10 +92,10 @@ typedef enum {
  */
 struct mtd_oob_ops {
 	mtd_oob_mode_t	mode;
-	size_t		len;
-	size_t		retlen;
-	size_t		ooblen;
-	size_t		oobretlen;
+	size_mtd_t		len;
+	size_mtd_t		retlen;
+	size_mtd_t		ooblen;
+	size_mtd_t		oobretlen;
 	uint32_t	ooboffs;
 	uint8_t		*datbuf;
 	uint8_t		*oobbuf;
@@ -157,11 +157,11 @@ struct mtd_info {
 
 	/* This stuff for eXecute-In-Place */
 	/* phys is optional and may be set to NULL */
-	int (*point) (struct mtd_info *mtd, loff_t from, size_t len,
-			size_t *retlen, void **virt, resource_size_t *phys);
+	int (*point) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len,
+			size_mtd_t *retlen, void **virt, resource_size_t *phys);
 
 	/* We probably shouldn't allow XIP if the unpoint isn't a NULL */
-	void (*unpoint) (struct mtd_info *mtd, loff_t from, size_t len);
+	void (*unpoint) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len);
 
 	/* Allow NOMMU mmap() to directly map the device (if not NULL)
 	 * - return the address to which the offset maps
@@ -178,8 +178,8 @@ struct mtd_info {
 	struct backing_dev_info *backing_dev_info;
 
 
-	int (*read) (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf);
-	int (*write) (struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf);
+	int (*read) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len, size_mtd_t *retlen, u_char *buf);
+	int (*write) (struct mtd_info *mtd, loff_mtd_t to, size_mtd_t len, size_mtd_t *retlen, const u_char *buf);
 
 	/* In blackbox flight recorder like scenarios we want to make successful
 	   writes in interrupt context. panic_write() is only intended to be
@@ -188,11 +188,11 @@ struct mtd_info {
 	   longer, this function can break locks and delay to ensure the write
 	   succeeds (but not sleep). */
 
-	int (*panic_write) (struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf);
+	int (*panic_write) (struct mtd_info *mtd, loff_mtd_t to, size_mtd_t len, size_mtd_t *retlen, const u_char *buf);
 
-	int (*read_oob) (struct mtd_info *mtd, loff_t from,
+	int (*read_oob) (struct mtd_info *mtd, loff_mtd_t from,
 			 struct mtd_oob_ops *ops);
-	int (*write_oob) (struct mtd_info *mtd, loff_t to,
+	int (*write_oob) (struct mtd_info *mtd, loff_mtd_t to,
 			 struct mtd_oob_ops *ops);
 
 	/*
@@ -200,33 +200,33 @@ struct mtd_info {
 	 * flash devices. The user data is one time programmable but the
 	 * factory data is read only.
 	 */
-	int (*get_fact_prot_info) (struct mtd_info *mtd, struct otp_info *buf, size_t len);
-	int (*read_fact_prot_reg) (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf);
-	int (*get_user_prot_info) (struct mtd_info *mtd, struct otp_info *buf, size_t len);
-	int (*read_user_prot_reg) (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf);
-	int (*write_user_prot_reg) (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf);
-	int (*lock_user_prot_reg) (struct mtd_info *mtd, loff_t from, size_t len);
+	int (*get_fact_prot_info) (struct mtd_info *mtd, struct otp_info *buf, size_mtd_t len);
+	int (*read_fact_prot_reg) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len, size_mtd_t *retlen, u_char *buf);
+	int (*get_user_prot_info) (struct mtd_info *mtd, struct otp_info *buf, size_mtd_t len);
+	int (*read_user_prot_reg) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len, size_mtd_t *retlen, u_char *buf);
+	int (*write_user_prot_reg) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len, size_mtd_t *retlen, u_char *buf);
+	int (*lock_user_prot_reg) (struct mtd_info *mtd, loff_mtd_t from, size_mtd_t len);
 
 	/* kvec-based read/write methods.
 	   NB: The 'count' parameter is the number of _vectors_, each of
 	   which contains an (ofs, len) tuple.
 	*/
-	int (*writev) (struct mtd_info *mtd, const struct kvec *vecs, unsigned long count, loff_t to, size_t *retlen);
+	int (*writev) (struct mtd_info *mtd, const struct kvec *vecs, unsigned long count, loff_mtd_t to, size_mtd_t *retlen);
 
 	/* Sync */
 	void (*sync) (struct mtd_info *mtd);
 
 	/* Chip-supported device locking */
-	int (*lock) (struct mtd_info *mtd, loff_t ofs, uint64_t len);
-	int (*unlock) (struct mtd_info *mtd, loff_t ofs, uint64_t len);
+	int (*lock) (struct mtd_info *mtd, loff_mtd_t ofs, loff_mtd_t len);
+	int (*unlock) (struct mtd_info *mtd, loff_mtd_t ofs, loff_mtd_t len);
 
 	/* Power Management functions */
 	int (*suspend) (struct mtd_info *mtd);
 	void (*resume) (struct mtd_info *mtd);
 
 	/* Bad block management functions */
-	int (*block_isbad) (struct mtd_info *mtd, loff_t ofs);
-	int (*block_markbad) (struct mtd_info *mtd, loff_t ofs);
+	int (*block_isbad) (struct mtd_info *mtd, loff_mtd_t ofs);
+	int (*block_markbad) (struct mtd_info *mtd, loff_mtd_t ofs);
 
 	struct notifier_block reboot_notifier;  /* default mode before reboot */
 
@@ -306,10 +306,10 @@ extern void register_mtd_user (struct mtd_notifier *new);
 extern int unregister_mtd_user (struct mtd_notifier *old);
 
 int default_mtd_writev(struct mtd_info *mtd, const struct kvec *vecs,
-		       unsigned long count, loff_t to, size_t *retlen);
+		       unsigned long count, loff_mtd_t to, size_mtd_t *retlen);
 
 int default_mtd_readv(struct mtd_info *mtd, struct kvec *vecs,
-		      unsigned long count, loff_t from, size_t *retlen);
+		      unsigned long count, loff_mtd_t from, size_mtd_t *retlen);
 
 #ifdef CONFIG_MTD_PARTITIONS
 void mtd_erase_callback(struct erase_info *instr);

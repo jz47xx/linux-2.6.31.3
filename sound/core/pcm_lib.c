@@ -2053,6 +2053,7 @@ static snd_pcm_sframes_t snd_pcm_lib_read1(struct snd_pcm_substream *substream,
 	return xfer > 0 ? (snd_pcm_sframes_t)xfer : err;
 }
 
+#if 0
 snd_pcm_sframes_t snd_pcm_lib_read(struct snd_pcm_substream *substream, void __user *buf, snd_pcm_uframes_t size)
 {
 	struct snd_pcm_runtime *runtime;
@@ -2068,6 +2069,108 @@ snd_pcm_sframes_t snd_pcm_lib_read(struct snd_pcm_substream *substream, void __u
 		return -EINVAL;
 	return snd_pcm_lib_read1(substream, (unsigned long)buf, size, nonblock, snd_pcm_lib_read_transfer);
 }
+#else
+snd_pcm_sframes_t snd_pcm_lib_read(struct snd_pcm_substream *substream, void __user *buf, snd_pcm_uframes_t size)
+{
+	struct snd_pcm_runtime *runtime;
+	int nonblock;
+
+	snd_pcm_sframes_t tmp_frames;
+	snd_pcm_sframes_t final_frames;
+	int channels;
+
+	if (snd_BUG_ON(substream != NULL))
+		return -ENXIO;
+
+	runtime = substream->runtime;
+
+	if (snd_BUG_ON(runtime != NULL))
+		return -ENXIO;
+
+	if (snd_BUG_ON(substream->ops->copy != NULL || runtime->dma_area != NULL))
+		return -EINVAL;
+
+	if (runtime->status->state == SNDRV_PCM_STATE_OPEN)
+		return -EBADFD;
+
+	nonblock = !!(substream->f_flags & O_NONBLOCK);
+	if (runtime->access != SNDRV_PCM_ACCESS_RW_INTERLEAVED)
+		return -EINVAL;
+
+	/*
+	 * mono capture process for no mono codec
+	 * function codec such as ipcood and dlv
+	 */
+
+	tmp_frames = snd_pcm_lib_read1(substream, (unsigned long)buf, size, nonblock, snd_pcm_lib_read_transfer);
+
+	channels = runtime->channels;
+
+	if (channels == 1) {
+		short *tmpbuf = kcalloc(tmp_frames, sizeof(short), GFP_KERNEL);
+		short *src, *dst, *end;
+
+		memcpy(tmpbuf, buf, frames_to_bytes(runtime, tmp_frames));
+
+		src = (short *)buf;
+		dst = (short *)tmpbuf;
+		end = dst + tmp_frames - 1;
+
+		src++;
+		dst++;
+		dst++;
+		final_frames = 1;
+		while (dst <= end) {
+			*src = *dst;
+			final_frames++;
+			src++;
+			dst++;
+			dst++;
+		}
+		tmp_frames = final_frames;
+		kfree(tmpbuf);
+
+#if 0
+		/* when i have time, i will try the code, no kcalloc */
+		if (snd_BUG_ON(runtime->dma_area))
+			return -EFAULT;
+
+		if (copy_to_user(buf, hwbuf, frames_to_bytes(runtime, frames)))
+			return -EFAULT;
+
+		unsigned int up_bytes = frames_to_bytes(runtime, frames);
+
+		int while_cnt = 4;
+		int while_all = up_bytes - 2;
+
+		while (while_cnt <= while_all) {
+			//printk("[%d = %d]\n",(while_cnt/2),while_cnt);
+			buf[(while_cnt/2)] = buf[while_cnt];
+			//printk("[%d = %d]\n",((while_cnt/2)+1),(while_cnt+1));
+			buf[((while_cnt/2)+1)] = buf[(while_cnt+1)];
+			while_cnt += 4;
+#if 0
+			buf[2] = buf[4];
+			buf[3] = buf[5];
+
+			buf[4] = buf[8];
+			buf[5] = buf[9];
+
+			buf[6] = buf[12];
+			buf[7] = buf[13];
+
+			buf[8] = buf[16];
+			buf[9] = buf[17];
+#endif
+		}
+		/* when i have time, i will try the code, no kcalloc */
+#endif
+	}
+
+	return tmp_frames;
+}
+
+#endif
 
 EXPORT_SYMBOL(snd_pcm_lib_read);
 

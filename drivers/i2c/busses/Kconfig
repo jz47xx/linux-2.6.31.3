@@ -3,9 +3,16 @@
 #
 
 menu "I2C Hardware Bus support"
-
 comment "PC SMBus host controller drivers"
 	depends on PCI
+
+config I2C_JZ47XX
+	tristate "JZ47XX I2C Interface support"
+	depends on SOC_JZ4730 || SOC_JZ4740  || SOC_JZ4750 || SOC_JZ4760
+	help
+	  If you have devices in the Ingenic JZ4730/JZ4740/JZ4750/jJZ4760 I2C bus, say yes to
+	  this option. This driver can also be built as a module.  If so, the
+	  module will be called i2c-jz47xx.
 
 config I2C_ALI1535
 	tristate "ALI 1535"

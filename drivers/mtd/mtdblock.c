@@ -1,6 +1,8 @@
 /*
  * Direct MTD block device access
  *
+ * $Id: mtdblock.c,v 1.1.1.1 2008-03-28 04:29:21 jlwei Exp $
+ *
  * (C) 2000-2003 Nicolas Pitre <nico@cam.org>
  * (C) 1999-2003 David Woodhouse <dwmw2@infradead.org>
  */
@@ -13,7 +15,7 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 #include <linux/vmalloc.h>
-
+#include <linux/hdreg.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/blktrans.h>
 #include <linux/mutex.h>
@@ -28,8 +30,6 @@ static struct mtdblk_dev {
 	unsigned int cache_size;
 	enum { STATE_EMPTY, STATE_CLEAN, STATE_DIRTY } cache_state;
 } *mtdblks[MAX_MTD_DEVICES];
-
-static struct mutex mtdblks_lock;
 
 /*
  * Cache stuff...
@@ -139,6 +139,8 @@ static int do_cached_write (struct mtdblk_dev *mtdblk, unsigned long pos,
 	if (!sect_size)
 		return mtd->write(mtd, pos, len, &retlen, buf);
 
+	DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: walk cache way.\n");
+
 	while (len > 0) {
 		unsigned long sect_start = (pos/sect_size)*sect_size;
 		unsigned int offset = pos - sect_start;
@@ -147,6 +149,7 @@ static int do_cached_write (struct mtdblk_dev *mtdblk, unsigned long pos,
 			size = len;
 
 		if (size == sect_size) {
+			DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: walk erase_write path.\n");
 			/*
 			 * We are covering a whole sector.  Thus there is no
 			 * need to bother with the cache while it may still be
@@ -156,11 +159,14 @@ static int do_cached_write (struct mtdblk_dev *mtdblk, unsigned long pos,
 			if (ret)
 				return ret;
 		} else {
+			DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: walk partial path.\n");
 			/* Partial sector: need to use the cache */
 
 			if (mtdblk->cache_state == STATE_DIRTY &&
-			    mtdblk->cache_offset != sect_start) {
+					mtdblk->cache_offset != sect_start) {
+				DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: before write_cached_data.\n");
 				ret = write_cached_data(mtdblk);
+				DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: after write_cached_data.\n");
 				if (ret)
 					return ret;
 			}
@@ -169,8 +175,13 @@ static int do_cached_write (struct mtdblk_dev *mtdblk, unsigned long pos,
 			    mtdblk->cache_offset != sect_start) {
 				/* fill the cache with the current sector */
 				mtdblk->cache_state = STATE_EMPTY;
+
+				DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: before mtd->read.\n");
+
 				ret = mtd->read(mtd, sect_start, sect_size,
 						&retlen, mtdblk->cache_data);
+
+				DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: after mtd->read.\n");
 				if (ret)
 					return ret;
 				if (retlen != sect_size)
@@ -209,6 +220,8 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 	if (!sect_size)
 		return mtd->read(mtd, pos, len, &retlen, buf);
 
+	DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: walk cache way.\n");
+
 	while (len > 0) {
 		unsigned long sect_start = (pos/sect_size)*sect_size;
 		unsigned int offset = pos - sect_start;
@@ -226,7 +239,9 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 		    mtdblk->cache_offset == sect_start) {
 			memcpy (buf, mtdblk->cache_data + offset, size);
 		} else {
+			DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: before mtd->read.\n");
 			ret = mtd->read(mtd, pos, size, &retlen, buf);
+			DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: after mtd->read.\n");
 			if (ret)
 				return ret;
 			if (retlen != size)
@@ -272,19 +287,15 @@ static int mtdblock_open(struct mtd_blktrans_dev *mbd)
 
 	DEBUG(MTD_DEBUG_LEVEL1,"mtdblock_open\n");
 
-	mutex_lock(&mtdblks_lock);
 	if (mtdblks[dev]) {
 		mtdblks[dev]->count++;
-		mutex_unlock(&mtdblks_lock);
 		return 0;
 	}
 
 	/* OK, it's not open. Create cache info for it */
 	mtdblk = kzalloc(sizeof(struct mtdblk_dev), GFP_KERNEL);
-	if (!mtdblk) {
-		mutex_unlock(&mtdblks_lock);
+	if (!mtdblk)
 		return -ENOMEM;
-	}
 
 	mtdblk->count = 1;
 	mtdblk->mtd = mtd;
@@ -297,7 +308,6 @@ static int mtdblock_open(struct mtd_blktrans_dev *mbd)
 	}
 
 	mtdblks[dev] = mtdblk;
-	mutex_unlock(&mtdblks_lock);
 
 	DEBUG(MTD_DEBUG_LEVEL1, "ok\n");
 
@@ -311,8 +321,6 @@ static int mtdblock_release(struct mtd_blktrans_dev *mbd)
 
    	DEBUG(MTD_DEBUG_LEVEL1, "mtdblock_release\n");
 
-	mutex_lock(&mtdblks_lock);
-
 	mutex_lock(&mtdblk->cache_mutex);
 	write_cached_data(mtdblk);
 	mutex_unlock(&mtdblk->cache_mutex);
@@ -325,9 +333,6 @@ static int mtdblock_release(struct mtd_blktrans_dev *mbd)
 		vfree(mtdblk->cache_data);
 		kfree(mtdblk);
 	}
-
-	mutex_unlock(&mtdblks_lock);
-
 	DEBUG(MTD_DEBUG_LEVEL1, "ok\n");
 
 	return 0;
@@ -371,12 +376,25 @@ static void mtdblock_remove_dev(struct mtd_blktrans_dev *dev)
 	kfree(dev);
 }
 
+
+static int mtdblock_getgeo(struct mtd_blktrans_dev *dev, struct hd_geometry *geo)
+{
+	memset(geo, 0, sizeof(*geo));
+
+	geo->heads     = 4;
+	geo->sectors   = 16;
+	geo->cylinders = dev->size/(4*16);
+
+	return 0;
+}
+
 static struct mtd_blktrans_ops mtdblock_tr = {
 	.name		= "mtdblock",
 	.major		= 31,
 	.part_bits	= 0,
 	.blksize 	= 512,
 	.open		= mtdblock_open,
+	.getgeo         = mtdblock_getgeo,
 	.flush		= mtdblock_flush,
 	.release	= mtdblock_release,
 	.readsect	= mtdblock_readsect,
@@ -388,8 +406,6 @@ static struct mtd_blktrans_ops mtdblock_tr = {
 
 static int __init init_mtdblock(void)
 {
-	mutex_init(&mtdblks_lock);
-
 	return register_mtd_blktrans(&mtdblock_tr);
 }
 

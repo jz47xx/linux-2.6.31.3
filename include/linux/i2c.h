@@ -47,6 +47,8 @@ struct i2c_driver;
 union i2c_smbus_data;
 struct i2c_board_info;
 
+#define EEPROM_DEVICE_NUMBER   0x50   /*eeprom device number.20091027*/
+
 #if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
 /*
  * The master routines are the ones normally used to transmit data to devices

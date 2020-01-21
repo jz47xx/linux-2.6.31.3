@@ -29,6 +29,27 @@ config TOUCHSCREEN_ADS7846
 	  To compile this driver as a module, choose M here: the
 	  module will be called ads7846.
 
+
+
+config TOUCHSCREEN_JZ
+	tristate "JZ touchscreen"
+	default y
+	help
+	  Say Y here to enable JZ SAR A/D controller if you use touchscreen
+          on JZ platform.
+
+	  To compile this driver as a module, choose M here, and the
+	  module jz_ts should be called.
+
+config JZ_ADKEY
+	bool "JZ ADKEY"
+	depends on TOUCHSCREEN_JZ
+	help
+          The AD value of the key is get by JZ SAR A/D controller when any ad key
+          is pressed down.
+
+
+
 config TOUCHSCREEN_AD7877
 	tristate "AD7877 based touchscreens"
 	depends on SPI_MASTER
@@ -193,6 +214,7 @@ config TOUCHSCREEN_INEXIO
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called inexio.
+
 
 config TOUCHSCREEN_MK712
 	tristate "ICS MicroClock MK712 touchscreen"
