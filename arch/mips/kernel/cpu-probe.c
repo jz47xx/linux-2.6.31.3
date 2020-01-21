@@ -160,6 +160,7 @@ void __init check_wait(void)
 	case CPU_PR4450:
 	case CPU_BCM3302:
 	case CPU_CAVIUM_OCTEON:
+	case CPU_JZRISC:
 		cpu_wait = r4k_wait;
 		break;
 
@@ -279,7 +280,13 @@ static inline unsigned long cpu_get_fpu_id(void)
  */
 static inline int __cpu_has_fpu(void)
 {
-	return ((cpu_get_fpu_id() & 0xff00) != FPIR_IMP_NONE);
+#if defined(CONFIG_SOC_JZ4760) || defined(CONFIG_SOC_JZ4760B) || defined(CONFIG_SOC_JZ4770)
+	/* (cpu_get_fpu_id() & 0xff00) no use again in jz4760B */
+	/* so we have to force it to 1 */
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 #define R4K_OPTS (MIPS_CPU_TLB | MIPS_CPU_4KEX | MIPS_CPU_4K_CACHE \
@@ -888,6 +895,42 @@ static inline void cpu_probe_cavium(struct cpuinfo_mips *c, unsigned int cpu)
 	}
 }
 
+static inline void cpu_probe_ingenic(struct cpuinfo_mips *c, unsigned int cpu)
+{
+	decode_configs(c);
+
+	c->options &= ~MIPS_CPU_COUNTER; /* JZRISC does not implement the CP0 counter. */
+	switch (c->processor_id & 0xff00) {
+	case PRID_IMP_JZRISC:
+
+		c->cputype = CPU_JZRISC;
+		c->isa_level = MIPS_CPU_ISA_M32R1;
+		c->tlbsize = 32;
+
+		__cpu_name[cpu] = "Ingenic JZRISC";
+
+#if 0
+		if (__cpu_has_fpu())
+		{
+			unsigned int tmp,mask;
+			mask = 1 << 26;
+			c->options |= MIPS_CPU_FPU;
+			/* Set floating mode to 32*32bit mode */
+			tmp = read_c0_status();
+			tmp &= ~mask;
+			printk("Jz4760 Floating coprocessor work on %s mode\n",
+					(tmp & mask) ? "32*64bit" : "32*32bit");
+			write_c0_status(tmp);
+		}
+
+#endif
+		break;
+	default:
+		panic("Unknown Ingenic Processor ID!");
+		break;
+	}
+}
+
 const char *__cpu_name[NR_CPUS];
 
 __cpuinit void cpu_probe(void)
@@ -900,6 +943,8 @@ __cpuinit void cpu_probe(void)
 	c->cputype	= CPU_UNKNOWN;
 
 	c->processor_id = read_c0_prid();
+
+
 	switch (c->processor_id & 0xff0000) {
 	case PRID_COMP_LEGACY:
 		cpu_probe_legacy(c, cpu);
@@ -924,6 +969,13 @@ __cpuinit void cpu_probe(void)
 		break;
 	case PRID_COMP_CAVIUM:
 		cpu_probe_cavium(c, cpu);
+		break;
+ 	case PRID_COMP_INGENIC:
+ 	case 0xd80000: // used on fpga
+ 	case 0xd90000: 
+	case 0xd10000: //falcon	
+		
+		cpu_probe_ingenic(c, cpu);
 		break;
 	}
 

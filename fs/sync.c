@@ -17,7 +17,16 @@
 
 #define VALID_FLAGS (SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE| \
 			SYNC_FILE_RANGE_WAIT_AFTER)
-
+#if defined(CONFIG_MTD_BLOCK)
+static struct mtdblk_dev *g_udc_mtdblk;
+extern struct mtdblk_dev *udc_get_mtdblk(void);
+extern void udc_flush_cache(struct mtdblk_dev *mtdblk);
+#endif
+#if defined(CONFIG_MTD_UBI)
+static struct ubi_blktrans_dev *g_udc_ubiblk;
+extern struct ubi_blktrans_dev *udc_get_ubiblk(void);
+extern void udc_flush_writecache(struct ubi_blktrans_dev *ubiblk);
+#endif
 /*
  * Do the filesystem syncing work. For simple filesystems sync_inodes_sb(sb, 0)
  * just dirties buffers with inodes so we have to submit IO for these buffers
@@ -35,6 +44,7 @@ static int __sync_filesystem(struct super_block *sb, int wait)
 	sync_inodes_sb(sb, wait);
 	if (sb->s_op->sync_fs)
 		sb->s_op->sync_fs(sb, wait);
+
 	return __sync_blockdev(sb->s_bdev, wait);
 }
 
@@ -80,6 +90,7 @@ EXPORT_SYMBOL_GPL(sync_filesystem);
  * flags again, which will cause process A to resync everything.  Fix that with
  * a local mutex.
  */
+extern struct kmem_cache *fat_inode_cachep;
 static void sync_filesystems(int wait)
 {
 	struct super_block *sb;
@@ -110,6 +121,16 @@ restart:
 	}
 	spin_unlock(&sb_lock);
 	mutex_unlock(&mutex);
+#if defined(CONFIG_MTD_BLOCK)	
+	g_udc_mtdblk = udc_get_mtdblk();
+	if(g_udc_mtdblk)
+		udc_flush_cache(g_udc_mtdblk);
+#endif
+#if defined(CONFIG_MTD_UBI)
+	g_udc_ubiblk = udc_get_ubiblk();
+	if(g_udc_ubiblk)
+		udc_flush_writecache(g_udc_ubiblk);
+#endif
 }
 
 /*

@@ -207,6 +207,43 @@ config MII
 	  or internal device.  It is safe to say Y or M here even if your
 	  ethernet card lack MII.
 
+config JZ_ETH
+	tristate "JZ4730/JZ5730 On-Chip Ethernet support"
+	depends on NET_ETHERNET && (SOC_JZ4730 || SOC_JZ5730 || JZ_FPGA)
+	help
+	  Say Y for support of JZ4730/JZ5730 On-Chip Ethernet interface.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called jz_eth.
+
+config JZCS8900
+	tristate "JZ CS8900A Ethernet support"
+	depends on NET_ETHERNET && (SOC_JZ4740 || SOC_JZ4750 || SOC_JZ4760 || SOC_JZ4760B)
+	help
+	  Say Y for support of JZ CS8900A Ethernet interface.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called jzcs8900a.
+
+config JZ4760_ETH
+	tristate "JZ4760 On-Chip Ethernet support"
+	depends on NET_ETHERNET && (SOC_JZ4760 || SOC_JZ4810 || SOC_JZ4770 || JZ_FPGA)
+	help
+	  Say Y for support of JZ4760 On-Chip Ethernet interface.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called jz4760_eth.
+
+config JZ_AX88796C
+	tristate "AX88796C for Ingenic SOC"
+	depends on NET_ETHERNET && JZSOC
+	help
+	  Say Y for support of AX88796C Ethernet interface on Ingenic SOC.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called ax88796c.
+
+
 config MACB
 	tristate "Atmel MACB support"
 	depends on AVR32 || ARCH_AT91SAM9260 || ARCH_AT91SAM9263 || ARCH_AT91SAM9G20 || ARCH_AT91CAP9
@@ -1928,6 +1965,22 @@ config ATL2
 	  To compile this driver as a module, choose M here.  The module
 	  will be called atl2.
 
+config JZ4770_MAC
+	tristate "JZ4770 on-chip MAC support"
+	depends on NET_ETHERNET && SOC_JZ4770
+	select CRC32
+	select MII
+	select PHYLIB
+	help
+	  This is the driver for JZ4770 on-chip mac device. 
+
+config JZ4770_MAC_RMII
+	bool "RMII PHY Interface"
+	depends on JZ4770_MAC
+	default n
+        help
+          Use Reduced PHY MII Interface for JZ4770 ethernet MAC
+
 source "drivers/net/fs_enet/Kconfig"
 
 endif # NET_ETHERNET
@@ -3210,5 +3263,7 @@ config VIRTIO_NET
 	---help---
 	  This is the virtual network driver for virtio.  It can be used with
           lguest or QEMU based VMMs (like KVM or Xen).  Say Y or M.
+
+source "drivers/net/ath6kl/Kconfig"
 
 endif # NETDEVICES

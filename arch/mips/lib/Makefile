@@ -6,6 +6,7 @@ lib-y	+= csum_partial.o delay.o memcpy.o memcpy-inatomic.o memset.o \
 	   strlen_user.o strncpy_user.o strnlen_user.o uncached.o
 
 obj-y			+= iomap.o
+obj-y			+= udivdi3.o umoddi3.o clz.o
 obj-$(CONFIG_PCI)	+= iomap-pci.o
 
 obj-$(CONFIG_CPU_LOONGSON2)	+= dump_tlb.o
@@ -29,5 +30,17 @@ obj-$(CONFIG_CPU_TX49XX)	+= dump_tlb.o
 obj-$(CONFIG_CPU_VR41XX)	+= dump_tlb.o
 obj-$(CONFIG_CPU_CAVIUM_OCTEON)	+= dump_tlb.o
 
+obj-$(CONFIG_KPROBES)	+= sstep.o
+
+$(obj)/udivdi3.o: $(obj)/udivdi3.masm
+	cp -fv $<  $@
+
+$(obj)/umoddi3.o: $(obj)/umoddi3.masm
+	cp -fv $<  $@
+
+$(obj)/clz.o: $(obj)/clz.masm
+	cp -fv $<  $@
+
 # libgcc-style stuff needed in the kernel
 obj-y += ashldi3.o ashrdi3.o cmpdi2.o lshrdi3.o ucmpdi2.o
+

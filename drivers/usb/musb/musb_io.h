@@ -37,9 +37,11 @@
 
 #include <linux/io.h>
 
-#if !defined(CONFIG_ARM) && !defined(CONFIG_SUPERH) \
-	&& !defined(CONFIG_AVR32) && !defined(CONFIG_PPC32) \
-	&& !defined(CONFIG_PPC64) && !defined(CONFIG_BLACKFIN)
+#if !defined(CONFIG_ARM) && !defined(CONFIG_SUPERH)			\
+	&& !defined(CONFIG_AVR32) && !defined(CONFIG_PPC32)		\
+	&& !defined(CONFIG_PPC64) && !defined(CONFIG_BLACKFIN)		\
+	&& !defined(CONFIG_SOC_JZ4760) && !defined(CONFIG_SOC_JZ4760B)	\
+	&& !defined(CONFIG_SOC_JZ4770)
 static inline void readsl(const void __iomem *addr, void *buf, int len)
 	{ insl((unsigned long)addr, buf, len); }
 static inline void readsw(const void __iomem *addr, void *buf, int len)

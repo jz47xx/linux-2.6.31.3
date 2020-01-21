@@ -50,6 +50,11 @@
 #define I2C_PEC		0x0708	/* != 0 to use PEC with SMBus */
 #define I2C_SMBUS	0x0720	/* SMBus transfer */
 
+#define I2C_SET_SUB_ADDRESS	0x0730	
+#define I2C_SET_CLOCK	0x0731	
+
+extern void i2c_jz_setclk(struct i2c_client *client,unsigned long i2cclk);
+
 
 /* This is the structure as used in the I2C_SMBUS ioctl call */
 struct i2c_smbus_ioctl_data {

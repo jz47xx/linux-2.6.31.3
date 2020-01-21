@@ -1456,9 +1456,17 @@ void ubifs_lpt_free(struct ubifs_info *c, int wr_only)
 
 	free_obsolete_cnodes(c); /* Leftover from a failed commit */
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ltab_cmt);
+#else
 	vfree(c->ltab_cmt);
+#endif
 	c->ltab_cmt = NULL;
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->lpt_buf);
+#else
 	vfree(c->lpt_buf);
+#endif
 	c->lpt_buf = NULL;
 	kfree(c->lsave);
 	c->lsave = NULL;
@@ -1478,7 +1486,11 @@ void ubifs_lpt_free(struct ubifs_info *c, int wr_only)
 		kfree(c->lpt_heap[i].arr);
 	kfree(c->dirty_idx.arr);
 	kfree(c->nroot);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(c->ltab);
+#else
 	vfree(c->ltab);
+#endif
 	kfree(c->lpt_nod_buf);
 }
 

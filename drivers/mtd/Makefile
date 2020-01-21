@@ -17,7 +17,13 @@ obj-$(CONFIG_MTD_OF_PARTS)      += ofpart.o
 # 'Users' - code which presents functionality to userspace.
 obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
 obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
+
+ifeq ($(CONFIG_JZSOC), y)
+obj-$(CONFIG_MTD_BLOCK)		+= mtdblock-jz.o
+else
 obj-$(CONFIG_MTD_BLOCK)		+= mtdblock.o
+endif
+
 obj-$(CONFIG_MTD_BLOCK_RO)	+= mtdblock_ro.o
 obj-$(CONFIG_FTL)		+= ftl.o
 obj-$(CONFIG_NFTL)		+= nftl.o
@@ -25,6 +31,8 @@ obj-$(CONFIG_INFTL)		+= inftl.o
 obj-$(CONFIG_RFD_FTL)		+= rfd_ftl.o
 obj-$(CONFIG_SSFDC)		+= ssfdc.o
 obj-$(CONFIG_MTD_OOPS)		+= mtdoops.o
+
+obj-$(CONFIG_UDC_USE_LB_CACHE)	+= udc_cache.o
 
 nftl-objs		:= nftlcore.o nftlmount.o
 inftl-objs		:= inftlcore.o inftlmount.o

@@ -1,5 +1,5 @@
 /*
- *  drivers/mtd/nandids.c
+ *  drivers/mtd/nand/nand_ids.c
  *
  *  Copyright (C) 2002 Thomas Gleixner (tglx@linutronix.de)
  *
@@ -10,6 +10,10 @@
  */
 #include <linux/module.h>
 #include <linux/mtd/nand.h>
+
+#define LP_OPTIONS (NAND_SAMSUNG_LP_OPTIONS | NAND_NO_READRDY | NAND_NO_AUTOINCR)
+#define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
+
 /*
 *	Chip ID list
 *
@@ -21,110 +25,119 @@
 +	256	256 Byte page size
 *	512	512 Byte page size
 */
-struct nand_flash_dev nand_flash_ids[] = {
+struct nand_flash_dev nand_flash_ids[] =
+{
+	//	name              	id        	 extid       planenum  dienum   tals    talh	trp	twp    trhw	twhr	pagesize  blocksize oobsize rowcycle maxbadblocks maxvalidblocks eccblock  eccbit  buswidth  badblockpos options
+	{"TOSHIBA_TC58NVG2S3ETA00",	  	0x98DC,		0x00761590,	2,	1,	12,	5,	12,	12,	100,	60,	2048,     128*1024, 	64, 	3,	100,		4096,		512,	4,	8,	0,	0},
+	{"SAMSUNG_K9F1208U0C",	  	0xEC76,		0x00743F5A,	1,	1,	12,	5,	12,	12,	100,	60,	512,     16*1024, 	16, 	3,	100,		4096,		512,	8,	8,	0,	0},
+	{"HYNIX_HY27UF084G2B",	        0xADDC,	        0x00549510,  	1,    	1,      15,  	5,     15,	15,  	60,     60,     2048,     128*1024,	64, 	3,	80,		4096,		512,	1,	0,	0,	LP_OPTIONS},
+	{"MICRON_MT29F64G08CFAAA",	0x2CD7,		0x00843E94,	2,	1,	10,	5,	10,	10,	100,	60,	4096,     512*1024,	218,	3,	400,		4096*4,		539,	12,	8,	0,	LP_OPTIONS},
+	{"SAMSUNG_K9GAG08U0D",	  	0xECD5,		0x41342994,	1,	1,	12,	5,	12,	12,	100,	60,	4096,     512*1024, 	218, 	3,	100,		4096,		512,	8,	8,	0,	LP_OPTIONS},
+	{"SAMSUNG_K9GAG08U0M",	  	0xECD5,		0x0074b614,	1,	1,	12,	5,	12,	12,	100,	60,	4096,     512*1024, 	128, 	3,	100,		4096,		512,	8,	8,	0,	LP_OPTIONS},
+	{"SAMSUNG_K9GAG08U0E",	  	0xECD5,		0x42507284,	2,	1,	12,	5,	12,	12,	100,	60,	8192,     1024*1024, 	436, 	3,	100,		2048,		512,	8,	8,	0,	LP_OPTIONS},
+	{"SAMSUNG_K9GBG08U0M",          0xECD7,         0x42547294,     2,      1,      12,     5,      12,     12,     100,    60,     8192,     1024*1024,    436,    3,      100,            2048,           512,    8,      8,      0,      LP_OPTIONS},
+	{"SAMSUNG_K9GBG08U0A",          0xECD7,         0x43547694,     2,      1,      12,     5,      12,     12,     100,    60,     8192,     1024*1024,    640,    3,      116,            4152,           512,    16,      8,      0,      LP_OPTIONS},
+	{"HYNIX_H8BCS0UN0MCR",		0xADBC,	 	0x00545510,	1,	1,	25,	10,	25,	25,	100,	60,	2048,     128*1024,	64,	3,	80,		4096,		512,	4,	16,	0,	LP_OPTIONS16},
+	{"SAMSUNG_K9G8G08U0M",		0xECD3, 	0x00642514,	2,	1,	15,	5,	15, 	15,	60,   	60,  	2048,     256*1024,	64,     3,	100,		4096,		512,	4,	8,	0,	LP_OPTIONS},
 
-#ifdef CONFIG_MTD_NAND_MUSEUM_IDS
-	{"NAND 1MiB 5V 8-bit",		0x6e, 256, 1, 0x1000, 0},
-	{"NAND 2MiB 5V 8-bit",		0x64, 256, 2, 0x1000, 0},
-	{"NAND 4MiB 5V 8-bit",		0x6b, 512, 4, 0x2000, 0},
-	{"NAND 1MiB 3,3V 8-bit",	0xe8, 256, 1, 0x1000, 0},
-	{"NAND 1MiB 3,3V 8-bit",	0xec, 256, 1, 0x1000, 0},
-	{"NAND 2MiB 3,3V 8-bit",	0xea, 256, 2, 0x1000, 0},
-	{"NAND 4MiB 3,3V 8-bit",	0xd5, 512, 4, 0x2000, 0},
-	{"NAND 4MiB 3,3V 8-bit",	0xe3, 512, 4, 0x2000, 0},
-	{"NAND 4MiB 3,3V 8-bit",	0xe5, 512, 4, 0x2000, 0},
-	{"NAND 8MiB 3,3V 8-bit",	0xd6, 512, 8, 0x2000, 0},
+	{"SAMSUNG_K9F1G08U0B", 		0xECF1,		0x00409500,    	1,	1,	15, 	5,	15,	15,  	100,  60, 	2048,    128*1024,	64, 	3,	20,	 	 1024,		512,	 1,	8,	0,	LP_OPTIONS},
+#if 0
+	{"SAMSUNG_K9GBG08U0M", 0xECD7, 0x00547294,	1,	    	15,	5,	15,	15,	100,  60,  8192,     1024*1024,	436, 	3,	100,		4096,		,	0,	,	,	},
+	{"SAMSUNG_K9F1G08U0M", 0xECF1,		0,     	1,		15, 	5,	15,	15,  	100,  60,  2048,     128*1024,	64, 	3,	20,		1024,		,	0,	,	,	},
+	{"SAMSUNG_K9GAG08U0D", 0xECD5, 0x00342994,  	1,		15,	5,	15,	15, 	100,  60,  4096,     512*1024,  128,    3,	100,		4096,		,	0,	,	,	},
+	{"SAMSUNG_K9GAG08U0M", 0xECD5, 0x0074b614,  	1,	   	12,	5,	12,	12,	100,  60,  4096,     512*1024, 	128, 	3,	100,		4096,		512,	4,	,	,	},
+	{"SAMSUNG_K9HBG08U1M", 0xECD5, 0x00682555,  0x800002,		15,	5,	15,	15,  	100,  60,  2048,     256*1024,	64, 	3,	200,		8192,		,	0,	,	,	},
+	{"SAMSUNG_K9HBG08U1M", 0xECD5, 0x01682555,  0x800002,		15,	5,	15,	15,  	100,  60,  2048,     256*1024,	64, 	3,      200*2,		8192*2,		,	0,	,	,	},
+	{"SAMSUNG_K9LBG08U0M", 0xECD7, 0x0078B655,     1,	   	12,	5,	15,	15,	100,  60,  4096,     512*1024,	64, 	3,      200,		8192,		,	0,	,	,	},
+	
+	{"SAMSUNG_K9G8G08U0A", 0xECD3, 0x0064a514,      2,		12,	5,  	12,	12,  	100,  60,  2048,     256*1024,	64, 	3,	100,		4096,		,	0,	,	,	},
+	{"SAMSUNG_K9K8G08U0A", 0xECD3, 0x00589551,  0x400002,		12, 	5,   	12,	12,  	100,  60,  2048,     128*1024,	64, 	3,	160,		8192,		,	0,	,	,	},
+	{"SAMSUNG_K9G8G08U0B", 0xECD3, 0x0064a514,      2,		12,	5,   	12,	12,  	100,  60,  2048,     256*1024,	64, 	3,	100,		4096,		,	0,	,	,	},
+	{"SAMSUNG_K9LAG08U0M", 0xECD5, 0x00682555,  0x800002,		12, 	5,   	12,	12,  	 60,  60,  2048,     256*1024,	64, 	3,	200,		8192,		,	0,	,	,	},
+	{"SAMSUNG_K9WAG08U1M", 0xECD3, 0x01589551,  0x400002,		12,	5,   	12,	12,  	100,  60,  2048,     128*1024,	64, 	3,	160*2,		8192*2,		512,	1,	,	,	},
+	{"SAMSUNG_K9LAG08U1M", 0xECD3, 0x01642514,	2,		15,	5,   	15,	15,  	100,  60,  2048,     256*1024,	64, 	3,	200,		8192,		,	0,	,	,	},
+	{"SAMSUNG_K9LAG08U0A", 0xECD5, 0x00682555,  0x800002,		15,	5,   	15,	15,  	100,  60,  2048,     256*1024,	64, 	3,	200,		8192,		,	0,	,	,	},
+	{"SAMSUNG_K9HBG08U1A", 0xECD5, 0x01682555,  0x800002,		15,	5,   	15,	15,  	100,  60,  2048,     256*1024,	64, 	3,	200*2,		8192*2,		,	0,	,	,	},
+	{"SAMSUNG_K9F4G08U0A", 0xECD3, 0x00549510,	2,		12,	5,   	12,	12,  	100,  60,  2048,     512*1024,	64, 	3,	80,		4096,		512,	1,	,	,	},
+	{"SAMSUNG_K9K8G08U0M", 0xECD3, 0x00589551,	2,		12,	5,   	12,	12,  	100,  60,  2048,     1024*1024,	64, 	3,	160,		8192,		512,	1,	,	,	},
+	
+	{"HYNIX_HY27UU08AG5M", 0xADD3, 0x0064A514,  	2,		12,	5,	12,	12,	100,  80,  2048,     256*1024,	64, 	3,	100,		4096,		,	0,	,	,	},
+	{"HYNIX_HY27UU08AG5M", 0xADD3, 0x0164A514,  	2,		12, 	5,	12,	12,	100,  80,  2048,     256*1024,	64, 	3,	200,		8192,		,	0,	,	,	},
+	{"HYNIX_HY27UT088G2M", 0xADD3, 0x0064A514,  0x400002,		12,	5,	12,	12,	100,  80,  2048,     256*1024,	64, 	3,	100,		4096,		528,	4,	,	,	},
+	{"HYNIX_HY27UT088G2A", 0xADD3, 0x0034A514,  	2,		12,  	5,   	12,	12,  	100,  80,  2048,     256*1024,	64, 	3,	100,		4096,		528,	4,	,	,	},
+	{"HYNIX_HY27UF081G2M", 0xADF1, 0x00001500,  	1,		5, 	15,  	25,	40,	60,   60,  2048,     128*1024,	64, 	2,	20,		1024,		,	0,	,	,	},
+	{"HYNIX_HY27UU08AG5A", 0xADD3, 0x0134A514,  	2,		12,  	5,   	12,	12,  	100,  80,  2048,     256*1024,	64, 	3,	200,		8192,		528,	4,	,	,	},
+	{"HYNIX_HY27UV08BG5A", 0xADD5, 0x0138A555,  0x800002,		12, 	5,   	12,	12,	100,  80,  2048,     256*1024,	64, 	3,	200*2,		8192*2,		528,	4,	,	,	},
+	{"HYNIX_HY27UU088G5M", 0xADDC, 0x01002584,      1,		5,  	15,  	40,	40,	80,   80,  2048,     256*1024,	64, 	3,	118,		4096,		,	0,	,	,	},
+	{"HYNIX_HY27UF082G2M", 0xADDA, 0x00001500,  	1,		0,  	10,  	25,	25,  	60,   60,  2048,     128*1024,	64, 	3,	40,		2048,		,	0,	,	,	},
+	{"HYNIX_HY27UF084G2M", 0xADDC, 0x00009580,  	1,		15,  	5,   	15,	15,  	60,   60,  2048,     128*1024,	64, 	3,	80,		4096,		512,	1,	,	,	},
+	{"HYNIX_HY27UT084G2M", 0xADDC, 0x00002584,  	1,		5, 	15,	40,	40,  	80,   80,  2048,     256*1024,	64, 	3,	59,		2048,		512,	4,	,	,	},
+	
+	{"MICRON_MT29F16G08MAA",  0x2CD3, 0x00743E94,   1,	 	10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	128,	3,	160,		4096,		539,	8,	,	,	},
+	{"MICRON_MT29F32G08QAA",  0x2CD5, 0x00743E94,   1,	 	10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	128,	3,	160*2,		4096*2,		,	0,	,	,	},
+	{"MICRON_MT29F64G08TAA",  0x2CD5, 0x00783ED5,   1,	 	10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	128,	3,	160*4,		4096*4,		,	0,	,	,	},
+	{"MICRON_MT29F32G08CBAAA",0x2CD7, 0x00843E94,   1,	 	10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	218,	3,	200,		8192,		,	0,	,	,	},		
+	
+	{"INTEL_29F16G08AAMC1",	  0x89D5, 0x00743E94,   1,		10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	128, 	3,	160,		4096,		539,	8,	,	,	},
+	{"INTEL_29F32G08CAMC1",	  0x89D5, 0x01743E94,   1,		10, 	5,   	10,	10,  	100,  60,  4096,     512*1024,	128, 	3,	160*2,		4096*2,		539,	8,	,	,	},
+	{"INTEL_29F64G08FAMC1",	  0x89D7, 0x01783ED5,   1,		10,	5,   	10,	10,  	100,  60,  4096,     512*1024,	128, 	3,	160*4,		4096*4,		539,	8,	,	,	},
+	{"INTEL_29F32G08AAMD1",	  0x89D7, 0x00843E94,   1,		10,	5,   	10,	10,  	100,  60,  4096,     512*1024,	218, 	3,	160,		4096,		,	0,	,	,	},
+	{"INTEL_29F32G08AAMDB",	  0x8968, 0x00a94604,   1,		10,  	5,   	10,	10,  	100,  60,  4096,     1024*1024,	218, 	3,	160,		4096,		,	0,	,	,	},
 
-	{"NAND 8MiB 1,8V 8-bit",	0x39, 512, 8, 0x2000, 0},
-	{"NAND 8MiB 3,3V 8-bit",	0xe6, 512, 8, 0x2000, 0},
-	{"NAND 8MiB 1,8V 16-bit",	0x49, 512, 8, 0x2000, NAND_BUSWIDTH_16},
-	{"NAND 8MiB 3,3V 16-bit",	0x59, 512, 8, 0x2000, NAND_BUSWIDTH_16},
+
+
+		///////////////////////////////////////////////////
+		//The following list no tested......
+		///////////////////////////////////////////////////
+	
+	{"HYNIX_HY27UV08AG5A",	 0xADD3, 0x01002585,	1,		5,  	15,	40,	40,	80,   80,  2048,      256*1024, 64, 	3,             236,          8192,         528,  4        	,	},
+	{"HYNIX_HY27UV08BG5M",	 0xADD5, 0x0138A555,	2,		12,	5,	12,	12,	100,  80,  2048,      256*1024, 64, 	3,             400,         16384,         ,        0       ,	},
+	{"HYNIX_HY27UF081G2A",	 0xADF1, 0x00001D80,	1,		15,	5,	15,	15,	60,   60,  2048,      128*1024, 64, 	2,             20,          1024,          528,  1        	,	},
+	{"HYNIX_HY27UH08AGDM",	 0xADD3, 0x010095C1,	1,		15,	5,	15,	15,	60,   60,  2048,      128*1024, 64, 	3,             160*2,        8192*2,       512,  1       ,	},
+	{"HYNIX_HY27UH08AG5M",	 0xADD3, 0x010095C1,	1,		15,	5,	15,	15,	60,   60,  2048,      128*1024, 64, 	3,             160*2,        8192*2,       512,  1       ,	},
+	{"HYNIX_HY27UH088GDM",	 0xADDC, 0x00001500,	1,		5,	10,	25,	25,   60,   60,  2048,      128*1024, 64, 	3,             160,          8192,         ,     0        	,	},
+	{"HYNIX_HY27UH088G2M",	 0xADD3, 0x00001500,	1,		5,	10,	25,	25,   60,   60,  2048,      128*1024, 64, 	3,             160,          8192,         ,        0     	,	},
+	{"HYNIX_HY27UG088G5M",	 0xADDC, 0x01009580,	1,		15,	5,	15,	15,   60,   60,  2048,      128*1024, 64, 	3,             160,          8192,         512,  1        	,	},
+	{"HYNIX_HY27UG088GDM",	 0xADDC, 0x01009580,	1,		15,	5,	15,	15,   60,   60,  2048,      128*1024, 64, 	3,             160,          8192,         512,  1        	,	},
+	{"HYNIX_HY27UG084G2M",	 0xADDC, 0x00001500,	1,		5,	10,	25,	25,   60,   60,  2048,      128*1024, 64, 	3,             80,          4096,          ,     0        	,	},
+	{"HYNIX_HY27UG084GDM",	 0xADDA, 0x00001500,	1,		5,	10,	25,	25,   60,   60,  2048,      128*1024, 64, 	3,             80,          4096,           ,    0        	,	},
+	{"HYNIX_HY27UV08AG5M",	 0xADD3, 0x01002585,	1,		5,	15,	40,	40,  	80,   80,  2048,      256*1024, 64, 	3,             236,          8192,         528,  4        	,	},	
+		
+	{"SAMSUNG_K9L8G08U0M",	 0xECD3, 0x00582555,	2,		15,	5,	15,	15,  	100,  60,	 2048,      256*1024, 64, 	3,             100,          4096,          ,     0        	},
+	{"SAMSUNG_K9G4G08U0A",	 0xECDC, 0x00542514,	2,		15,	5,	15,	15,  	100,  60,  2048,      256*1024, 64, 	3,             50,          2048,           512,  4        	},	
+	{"SAMSUNG_K9MCG08U5M", 	 0xECD5, 0x03682555,0x800002,		25,	10,	25,	25,  	100,  60,  2048,      256*1024, 64, 	3,             200*4,        8192*4,        ,    0        	},
+	{"SAMSUNG_K9HCG08U1M",	 0xECD7, 0x0178B655,	1,		12,	5,	12,	12,  	100,  60,  4096,      512*1024, 128, 	3,             200*2,        8192*2,         ,     0        	},
+	{"SAMSUNG_K9K8G08U1M",	 0xECD3, 0x01009510,	1,		12,	5,	12,	12,  	100,  60,  2048,      128*1024, 64, 	3,             80*2,        4096*2,         ,     0        	},
+	{"SAMSUNG_K9W8G08U1M",	 0xECDC, 0x01001500,	1,		0,	10,	25,	15,  	100,  60,  2048,      128*1024, 64, 	3,             80*2,        4096*2,          ,     0        	},
+	{"SAMSUNG_K9F8G08U0M",	 0xECD3, 0x0064A610,	1,		12,	5,	12,	12,  	100,  60,  4096,      256*1024, 128, 	3,             80,          4096,           ,     0        	},
+	{"SAMSUNG_K9NBG08U5M",	 0xECD3, 0x03589551,0x400002,		25,	10,	25,	25,  	100,  60,  2048,      128*1024, 64, 	3,             160*4,        8192*4,         512,     1        	},
+	{"SAMSUNG_K9HAG08U1M",	 0xECD3, 0x01642514,	2,		15,	5,	15,	15,  	100,  60,  2048,      256*1024, 64, 	3,             200,          8192,           ,    0        	},
+		
+	{"MICRON_MT29F8G08FACWP",0x2CDC, 0x01001500,	1,		10,	5,	15,	15,   60,   60,  2048,      128*1024,  64, 		3,           80*2,        4096*2,          ,     0        	},
+	{"MICRON_MT29F8G08FABWP",0x2CDC, 0x01001500,	1,		10,	5,	15,	15,   60,   60,  2048,      128*1024,  64, 		3,           80*2,        4096*2,          ,     0        	},
+	{"MICRON_MT29F8G08BAA",	 0x2CD3, 0x005895D1,0x400002,		25,	10,	25,	25,  	100,  60,  2048,      128*1024,  64, 		3,           160,          8192,           ,     0       	},
+	{"MICRON_MT29F8G08DAA",	 0x2CDC, 0x01549590,	2,		25,	10,	25,	25,  	100,  60,  2048,      128*1024,  64, 		3,           80*2,        4096*2,          ,     0       	},
+	{"MICRON_MT29F16G08FAA", 0x2CD3, 0x015895D1,0x400002,		25,	10,	25,	25,  	100,  60,  2048,      128*1024,  64, 		3,           160*2,        8192*2,         ,     0        	},
+	{"MICRON_MT29F8G08AAA",	 0x2CD3, 0x00642E90,	1,		10,	5,	10,	10,  	100,  60,  4096,      256*1024,  128, 	3,          80,          4096,             ,     0        	},
+	{"MICRON_MT29F16G08DAA", 0x2CD3, 0x01642E90,	1,		10,	5,	10,	10,  	100,  60,  4096,      256*1024,  128, 		3,         80*2,        4096*2,           ,     0       	},
+	{"MICRON_MT29F32G08FAA", 0x2CD5, 0x01682ED1,	1,		10,	5,	10,	10,  	100,  60,  4096,      256*1024,  128, 		3,         160*2,        8192*2,          ,     0        	},
+	{"MICRON_MT29F8G08MAAWC",0x2CD3, 0x0064A594,	2,		10,	5,	15,	15,   60,   60,  2048,      256*1024,   64, 		3,         80,          4096,            ,     0        	},
+	{"MICRON_MT29F16G08QAAWC",0x2CD3,0x0164A594,	2,		10,	5,	25,	15,  	100,  60,  2048,      256*1024,   64, 		3,         80*2,        4096*2,          ,     0        	},
+	{"MICRON_MT29F32G08TAAWC",0x2CD5,0x0168A5D5,0x800002,		10,	5,	25,	15,  	100,  60,  2048,      256*1024,  64, 		3,           160*2,        8192*2,         ,     0        	},
+	{"MICRON_MT29F1G08ABB",	 0x2CA1, 0x00009580,	1,		25,	10,	25,	25,  	100,  80,  2048,      128*1024,  64, 		2,           80,          4096,             ,     0        	},
+	
+	{"INTEL_29F16G08FANB1",  0x89D3, 0x015895D1,0x400002,		25,	10,	25,	25,  	100,  60,  2048,      128*1024,   64, 		3,         160*2,        8192*2,         ,     0        	},
+	{"INTEL_29F08G08AAMB1",	 0x89D3, 0x0064A594,	2,		10,	5,	10,	15,  	100,  60,  2048,      256*1024,   64, 		3,         160,          4096,           ,     0        	},
+	{"INTEL_29F16G08CAMB1",  0x89D3, 0x0164A594,	2,		10,	5,	10,	15,  	100,  60,  2048,      256*1024,   64, 		3,         320,          8192,           ,     0        	},
+	{"INTEL_29F32G08FAMB1",  0x89D5, 0x0168A5D5,0x800002,		10,	5,	10,	15,  	100,  60,  2048,      256*1024,   64, 		3,         320*2,        8192*2,         ,     0        	},
+	{"INTEL_29F08G08AAMB2",  0x89D3, 0x0064A594,	2,		10,	5,	8,	15,  	100,  60,  2048,      256*1024,   64, 		3,         160,          4096,           ,     0        	},
+	{"INTEL_29F16G08CAMB2",  0x89D3, 0x0164A594,	2,		10,	5,	8,	15,  	100,  60,  2048,      256*1024,   64, 		3,         160*2,        4096*2,         ,     0        	},
+	{"INTEL_29F32G08FAMB2",  0x89D5, 0x0168A5D5,0x800002,		10,	5,	8,	15,  	100,  60,  2048,      256*1024,   64, 		3,         320*2,        8192*2,         ,     0        	},
+	
+	{"STMICRON_NAND08GW3B2AN6",0x20D3, 0x00009581,	1,		15,	5,	15,	15,   60,   60,  2048,      128*1024,   64, 		3,         160,          8192,           ,     0        	},
+	{"STMICRON_NAND08GW3C2AN1",0x20D3, 0x006CA514,	2,		12,	5,	12,	12,  	100,  80,  2048,      256*1024,   64, 		3,         80,          4096,            528,    4        	},
 #endif
 
-	{"NAND 16MiB 1,8V 8-bit",	0x33, 512, 16, 0x4000, 0},
-	{"NAND 16MiB 3,3V 8-bit",	0x73, 512, 16, 0x4000, 0},
-	{"NAND 16MiB 1,8V 16-bit",	0x43, 512, 16, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 16MiB 3,3V 16-bit",	0x53, 512, 16, 0x4000, NAND_BUSWIDTH_16},
-
-	{"NAND 32MiB 1,8V 8-bit",	0x35, 512, 32, 0x4000, 0},
-	{"NAND 32MiB 3,3V 8-bit",	0x75, 512, 32, 0x4000, 0},
-	{"NAND 32MiB 1,8V 16-bit",	0x45, 512, 32, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 32MiB 3,3V 16-bit",	0x55, 512, 32, 0x4000, NAND_BUSWIDTH_16},
-
-	{"NAND 64MiB 1,8V 8-bit",	0x36, 512, 64, 0x4000, 0},
-	{"NAND 64MiB 3,3V 8-bit",	0x76, 512, 64, 0x4000, 0},
-	{"NAND 64MiB 1,8V 16-bit",	0x46, 512, 64, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 64MiB 3,3V 16-bit",	0x56, 512, 64, 0x4000, NAND_BUSWIDTH_16},
-
-	{"NAND 128MiB 1,8V 8-bit",	0x78, 512, 128, 0x4000, 0},
-	{"NAND 128MiB 1,8V 8-bit",	0x39, 512, 128, 0x4000, 0},
-	{"NAND 128MiB 3,3V 8-bit",	0x79, 512, 128, 0x4000, 0},
-	{"NAND 128MiB 1,8V 16-bit",	0x72, 512, 128, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 128MiB 1,8V 16-bit",	0x49, 512, 128, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 128MiB 3,3V 16-bit",	0x74, 512, 128, 0x4000, NAND_BUSWIDTH_16},
-	{"NAND 128MiB 3,3V 16-bit",	0x59, 512, 128, 0x4000, NAND_BUSWIDTH_16},
-
-	{"NAND 256MiB 3,3V 8-bit",	0x71, 512, 256, 0x4000, 0},
-
-	/*
-	 * These are the new chips with large page size. The pagesize and the
-	 * erasesize is determined from the extended id bytes
-	 */
-#define LP_OPTIONS (NAND_SAMSUNG_LP_OPTIONS | NAND_NO_READRDY | NAND_NO_AUTOINCR)
-#define LP_OPTIONS16 (LP_OPTIONS | NAND_BUSWIDTH_16)
-
-	/*512 Megabit */
-	{"NAND 64MiB 1,8V 8-bit",	0xA2, 0,  64, 0, LP_OPTIONS},
-	{"NAND 64MiB 3,3V 8-bit",	0xF2, 0,  64, 0, LP_OPTIONS},
-	{"NAND 64MiB 1,8V 16-bit",	0xB2, 0,  64, 0, LP_OPTIONS16},
-	{"NAND 64MiB 3,3V 16-bit",	0xC2, 0,  64, 0, LP_OPTIONS16},
-
-	/* 1 Gigabit */
-	{"NAND 128MiB 1,8V 8-bit",	0xA1, 0, 128, 0, LP_OPTIONS},
-	{"NAND 128MiB 3,3V 8-bit",	0xF1, 0, 128, 0, LP_OPTIONS},
-	{"NAND 128MiB 1,8V 16-bit",	0xB1, 0, 128, 0, LP_OPTIONS16},
-	{"NAND 128MiB 3,3V 16-bit",	0xC1, 0, 128, 0, LP_OPTIONS16},
-
-	/* 2 Gigabit */
-	{"NAND 256MiB 1,8V 8-bit",	0xAA, 0, 256, 0, LP_OPTIONS},
-	{"NAND 256MiB 3,3V 8-bit",	0xDA, 0, 256, 0, LP_OPTIONS},
-	{"NAND 256MiB 1,8V 16-bit",	0xBA, 0, 256, 0, LP_OPTIONS16},
-	{"NAND 256MiB 3,3V 16-bit",	0xCA, 0, 256, 0, LP_OPTIONS16},
-
-	/* 4 Gigabit */
-	{"NAND 512MiB 1,8V 8-bit",	0xAC, 0, 512, 0, LP_OPTIONS},
-	{"NAND 512MiB 3,3V 8-bit",	0xDC, 0, 512, 0, LP_OPTIONS},
-	{"NAND 512MiB 1,8V 16-bit",	0xBC, 0, 512, 0, LP_OPTIONS16},
-	{"NAND 512MiB 3,3V 16-bit",	0xCC, 0, 512, 0, LP_OPTIONS16},
-
-	/* 8 Gigabit */
-	{"NAND 1GiB 1,8V 8-bit",	0xA3, 0, 1024, 0, LP_OPTIONS},
-	{"NAND 1GiB 3,3V 8-bit",	0xD3, 0, 1024, 0, LP_OPTIONS},
-	{"NAND 1GiB 1,8V 16-bit",	0xB3, 0, 1024, 0, LP_OPTIONS16},
-	{"NAND 1GiB 3,3V 16-bit",	0xC3, 0, 1024, 0, LP_OPTIONS16},
-
-	/* 16 Gigabit */
-	{"NAND 2GiB 1,8V 8-bit",	0xA5, 0, 2048, 0, LP_OPTIONS},
-	{"NAND 2GiB 3,3V 8-bit",	0xD5, 0, 2048, 0, LP_OPTIONS},
-	{"NAND 2GiB 1,8V 16-bit",	0xB5, 0, 2048, 0, LP_OPTIONS16},
-	{"NAND 2GiB 3,3V 16-bit",	0xC5, 0, 2048, 0, LP_OPTIONS16},
-
-	/*
-	 * Renesas AND 1 Gigabit. Those chips do not support extended id and
-	 * have a strange page/block layout !  The chosen minimum erasesize is
-	 * 4 * 2 * 2048 = 16384 Byte, as those chips have an array of 4 page
-	 * planes 1 block = 2 pages, but due to plane arrangement the blocks
-	 * 0-3 consists of page 0 + 4,1 + 5, 2 + 6, 3 + 7 Anyway JFFS2 would
-	 * increase the eraseblock size so we chose a combined one which can be
-	 * erased in one go There are more speed improvements for reads and
-	 * writes possible, but not implemented now
-	 */
-	{"AND 128MiB 3,3V 8-bit",	0x01, 2048, 128, 0x4000,
-	 NAND_IS_AND | NAND_NO_AUTOINCR |NAND_NO_READRDY | NAND_4PAGE_ARRAY |
-	 BBT_AUTO_REFRESH
-	},
-
-	{NULL,}
 };
 
 /*
@@ -143,8 +156,14 @@ struct nand_manufacturers nand_manuf_ids[] = {
 	{0x0, "Unknown"}
 };
 
+int get_flash_num(void)
+{
+	return (sizeof(nand_flash_ids) / sizeof(struct nand_flash_dev));
+}
+
 EXPORT_SYMBOL(nand_manuf_ids);
 EXPORT_SYMBOL(nand_flash_ids);
+EXPORT_SYMBOL(get_flash_num);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Thomas Gleixner <tglx@linutronix.de>");

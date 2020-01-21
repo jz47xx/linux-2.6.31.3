@@ -36,10 +36,16 @@
 
 struct mtd_partition {
 	char *name;			/* identifier string */
-	uint64_t size;			/* partition size */
+	uint64_t rl_size;		/* partition real size */
+	uint64_t size;			/* partition valid size */
 	uint64_t offset;		/* offset within the master MTD space */
+	uint64_t rl_offset;		/* offset within the master MTD space */
 	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
 	struct nand_ecclayout *ecclayout;	/* out of band layout for this partition (NAND only)*/
+
+	char cpu_mode;                  /* flag to specify whether the partition works with cpu mode, 0: dma mode, 1:cpu mode */
+	char use_planes;                /* flag to specify whether multiple planes of NAND is used in the partition, 0:don't use planes, 1: use planes  */
+	uint32_t mtdblock_jz_invalid;  /* flag to specify whether the partition works over mtdblock-jz, 0: over mtdblock-jz, 1: not over mtdblock-jz */
 };
 
 #define MTDPART_OFS_NXTBLK	(-2)

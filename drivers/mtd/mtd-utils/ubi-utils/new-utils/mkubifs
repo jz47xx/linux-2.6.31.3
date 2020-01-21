@@ -1,0 +1,86 @@
+#!/bin/sh
+
+if [ $# != 5 ]
+then
+	echo "Usage:"
+	echo "	`basename $0` /nfsroot/root26 pagesize ppb leb_num ubifs.img"
+	echo ""
+	echo "	pagesize:	min I/O size, same as pagesize"
+	echo "	ppb:		page num per block"
+	echo "	leb_num:	logical erase block number"
+	echo "	ubifs.img:	output file name"
+	echo ""
+	echo "Example:"
+	echo "	`basename $0` /nfsroot/root26 4096 128 1008 ubifs.img"
+	exit 1
+fi
+
+root_path=$1
+min_io=$2	# same as pagesize
+ppb=$3		# page per block
+leb_num=$4
+out_file=$5
+
+peb_size=$(($min_io*$ppb))
+leb_size=$(($peb_size-$min_io-$min_io))
+orig_out_file=orig_$out_file
+sec_out_file=sec_$out_file
+
+echo "make ubifs image ..."
+
+cd fs/ubifs/mkfs.ubifs/
+
+if [ ! -e mkfs.ubifs ]
+then
+	./configure > /dev/null
+	make
+fi
+
+export LD_LIBRARY_PATH=`pwd`/lzo/lib:$LD_LIBRARY_PATH
+
+./mkfs.ubifs -r $root_path -m $min_io -e $leb_size -c $leb_num -o $orig_out_file
+
+cd - > /dev/null
+
+cd drivers/mtd/mtd-utils/ubi-utils/new-utils/
+
+if [ ! -d new-utils-dir-x86 ]
+then
+	make ARCH=x86
+fi
+
+cd - > /dev/null
+
+cp drivers/mtd/mtd-utils/ubi-utils/new-utils/new-utils-dir-x86/ubirefimg ./
+cp drivers/mtd/mtd-utils/ubi-utils/new-utils/new-utils-dir-x86/ubinize ./
+
+mv fs/ubifs/mkfs.ubifs/$orig_out_file ./
+
+./ubirefimg $orig_out_file $sec_out_file $leb_size
+
+# prepare configuration ini-file
+vol_size=$((($leb_num*99/100-4)*$leb_size/1024/1024))MiB
+
+echo "vol_size = $vol_size"
+
+ini_file=ubi.ini
+
+touch $ini_file
+
+echo "[ubifs]" > $ini_file
+echo "mode=ubi" >> $ini_file
+echo "image=$sec_out_file" >> $ini_file
+echo "vol_id=0" >> $ini_file
+echo "vol_size=$vol_size" >> $ini_file
+echo "vol_type=dynamic" >> $ini_file
+echo "vol_name=ubifs" >> $ini_file
+echo "vol_alignment=1" >> $ini_file
+echo "vol_flag=autoresize" >> $ini_file
+
+./ubinize -v -o $out_file $ini_file -p $peb_size -m $min_io
+
+rm -fr $orig_out_file $sec_out_file $ini_file ubirefimg ubinize
+
+echo "make ubifs image done."
+
+exit 0 

@@ -13,6 +13,51 @@ menuconfig MISC_DEVICES
 
 if MISC_DEVICES
 
+config JZ_I2C_SIMULATE
+	bool "i2c simulate need by isp sensor on aquila_board"
+
+config JZ_OPT
+	bool "JZ OPT driver for JZ4760B"
+	depends on  SOC_JZ4760B
+config JZ_EFUSE
+	bool "JZ EFUSE driver for JZ4770"
+	depends on  SOC_JZ4770
+
+config JZ_CIM
+	bool "JZ CIM for Camera driver"
+
+config BF3703
+	bool "OmniVision BF3703 sensor support (0.3 MegaPixel)"
+	depends on JZ_CIM
+config OV3640
+	bool "OmniVision OV3640 sensor support (3.1 MegaPixel)"
+	depends on JZ_CIM
+config OV2655
+	bool "OmniVision OV2655 sensor support (2.0 MegaPixel)"
+	depends on JZ_CIM
+config CM3511
+	bool "CM3511 sensor support (0.3 MegaPixel)"
+	depends on JZ_CIM
+
+config OV2640
+	bool "OmniVision OV2640 sensor support (2.0 MegaPixel)"
+	depends on JZ_CIM
+config OV9650
+	bool "OmniVision OV9650 sensor support (1.3 MegaPixel)"
+	depends on JZ_CIM
+config OV7690
+	bool "OmniVision OV7690 sensor support (0.3 MegaPixel)"
+	depends on JZ_CIM
+config ISP
+	bool "Corelogic isp with SamSung S5K sensor support (3.1 MegaPixel)"
+	depends on JZ_CIM && JZ_I2C_SIMULATE
+config JZ_FAKE_SENSOR
+	bool "jz fake sensor support (3.1 MegaPixel)"
+	depends on JZ_CIM
+config JZ_TVP5150
+	bool "TVP5150 video decorder"
+	depends on JZ_CIM
+
 config ATMEL_PWM
 	tristate "Atmel AT32/AT91 PWM support"
 	depends on AVR32 || ARCH_AT91SAM9263 || ARCH_AT91SAM9RL || ARCH_AT91CAP9

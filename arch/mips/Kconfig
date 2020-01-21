@@ -4,6 +4,8 @@ config MIPS
 	select HAVE_IDE
 	select HAVE_OPROFILE
 	select HAVE_ARCH_KGDB
+	select HAVE_KPROBES
+	select HAVE_KRETPROBES
 	# Horrible source of confusion.  Die, die, die ...
 	select EMBEDDED
 	select RTC_LIB
@@ -18,6 +20,193 @@ config ZONE_DMA
 choice
 	prompt "System type"
 	default SGI_IP22
+
+config JZ4730_PMP
+	bool "Ingenic JZ4730 PMP board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4730
+
+config JZ4740_PAVO
+	bool "Ingenic JZ4740 PAVO board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4740
+
+config JZ4740_LEO
+	bool "Ingenic JZ4740 LEO board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4740
+
+config JZ4740_LYRA
+	bool "Ingenic JZ4740 LYRA board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4740
+
+config JZ4725_DIPPER
+	bool "Ingenic JZ4725 DIPPER board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4740
+	select SOC_JZ4725
+
+config JZ4720_VIRGO
+	bool "Ingenic JZ4720 VIRGO board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4740
+	select SOC_JZ4720
+
+config JZ4750_FUWA
+	bool "Ingenic JZ4750 FUWA board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4750
+	select JZ_FPGA
+
+config JZ4750D_FUWA1
+	bool "Ingenic JZ4750d FUWA1 board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4750D
+	select JZ_FPGA
+
+config JZ4750_APUS
+	bool "Ingenic JZ4750 APUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4750
+
+config JZ4750D_CETUS
+	bool "Ingenic JZ4750d CETUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4750D
+
+config JZ4750L_F4750L
+	bool "Ingenic JZ4750L FPGA board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4750L
+	select JZ_FPGA	
+
+config JZ4760_F4760
+	bool "Ingenic JZ4760 FPGA board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SOC_JZ4760
+	select JZ_FPGA
+
+config JZ4760_CYGNUS
+        bool "Ingenic JZ4760 CYGNUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SOC_JZ4760
+
+config JZ4760_ALTAIR
+        bool "Ingenic JZ4760 ALTAIR board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SOC_JZ4760
+
+config JZ4760_LEPUS
+        bool "Ingenic JZ4760 LEPUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_HIGHMEM
+	select SOC_JZ4760
+
+config JZ4760_HTB80
+        bool "SunNorth HTB80 board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_HIGHMEM
+	select SOC_JZ4760
+
+config JZ4760B_CYGNUS
+        bool "Ingenic JZ4760B CYGNUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SOC_JZ4760B
+
+config JZ4760B_LEPUS
+	bool "Ingenic JZ4760B LEPUS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_HIGHMEM
+	select SOC_JZ4760B
+
+config JZ4760B_LYNX
+	bool "Ingenic JZ4760B LYNX board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_HIGHMEM
+	select SOC_JZ4760B
+
+config JZ4770_PISCES
+	bool "Ingenic JZ4770 PISCES board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SOC_JZ4770
+
+config JZ4770_F4770
+	bool "Ingenic JZ4770 PYXIS board"
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select SOC_JZ4770
 
 config MACH_ALCHEMY
 	bool "Alchemy processor based machines"
@@ -671,6 +860,64 @@ source "arch/mips/cavium-octeon/Kconfig"
 
 endmenu
 
+#####################################################
+# Ingenic SOC series
+#####################################################
+
+config SOC_JZ4730
+	bool
+	select JZSOC
+
+config SOC_JZ4740
+	bool
+	select JZSOC
+
+config SOC_JZ4725
+	bool
+	select JZSOC
+
+config SOC_JZ4720
+	bool
+	select JZSOC
+
+config SOC_JZ4750
+	bool
+	select JZSOC
+
+config SOC_JZ4750D
+	bool
+	select JZSOC
+
+config SOC_JZ4750L
+	bool
+	select JZSOC
+
+config SOC_JZ4760
+	bool
+	select JZSOC
+
+config SOC_JZ4760B
+	bool
+	select JZSOC
+
+config SOC_JZ4770
+	bool
+	select JZSOC
+
+config JZ_FPGA
+	bool
+
+config JZSOC
+	bool
+	select JZRISC
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+
+config JZRISC
+	bool
+
+####################################################
+
 config RWSEM_GENERIC_SPINLOCK
 	bool
 	default y
@@ -804,7 +1051,7 @@ config EARLY_PRINTK
 	  unless you want to debug such a crash.
 
 config SYS_HAS_EARLY_PRINTK
-	bool
+	bool "early printk"
 
 config HOTPLUG_CPU
 	bool "Support for hot-pluggable CPUs"
@@ -2106,6 +2353,14 @@ config I8253
 config ZONE_DMA32
 	bool
 
+config FORCE_MAX_ZONEORDER
+	prompt "MAX_ZONEORDER"
+	depends on JZSOC
+	int
+	default "13"
+help
+	 The max memory that can be allocated = 4KB * 2^(CONFIG_FORCE_MAX_ZONEORDER - 1)
+
 source "drivers/pcmcia/Kconfig"
 
 source "drivers/pci/hotplug/Kconfig"
@@ -2161,6 +2416,23 @@ config MIPS32_N32
 config BINFMT_ELF32
 	bool
 	default y if MIPS32_O32 || MIPS32_N32
+
+endmenu
+
+menu "CPU Frequency scaling"
+
+config CPU_FREQ_JZ
+        tristate "CPUfreq driver for JZ CPUs"
+        depends on JZSOC
+        default n
+        help
+          This enables the CPUfreq driver for JZ CPUs.
+
+          If in doubt, say N.
+
+if (CPU_FREQ_JZ)
+source "drivers/cpufreq/Kconfig"
+endif
 
 endmenu
 

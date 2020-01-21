@@ -191,7 +191,8 @@ static int vtbl_check(const struct ubi_device *ubi,
 		vol_type = vtbl[i].vol_type;
 		name_len = be16_to_cpu(vtbl[i].name_len);
 		name = &vtbl[i].name[0];
-
+		
+		/* Note: Empty records contain all zeroes and the CRC checksum of those zeroes. */
 		crc = crc32(UBI_CRC32_INIT, &vtbl[i], UBI_VTBL_RECORD_SIZE_CRC);
 		if (be32_to_cpu(vtbl[i].crc) != crc) {
 			ubi_err("bad CRC at record %u: %#08x, not %#08x",
@@ -424,7 +425,11 @@ static struct ubi_vtbl_record *process_lvol(struct ubi_device *ubi,
 
 	/* Read both LEB 0 and LEB 1 into memory */
 	ubi_rb_for_each_entry(rb, seb, &sv->root, u.rb) {
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		leb[seb->lnum] = kmalloc(ubi->vtbl_size, GFP_KERNEL);
+#else
 		leb[seb->lnum] = vmalloc(ubi->vtbl_size);
+#endif
 		if (!leb[seb->lnum]) {
 			err = -ENOMEM;
 			goto out_free;
@@ -433,6 +438,7 @@ static struct ubi_vtbl_record *process_lvol(struct ubi_device *ubi,
 
 		err = ubi_io_read_data(ubi, leb[seb->lnum], seb->pnum, 0,
 				       ubi->vtbl_size);
+
 		if (err == UBI_IO_BITFLIPS || err == -EBADMSG)
 			/*
 			 * Scrub the PEB later. Note, -EBADMSG indicates an
@@ -470,7 +476,11 @@ static struct ubi_vtbl_record *process_lvol(struct ubi_device *ubi,
 		}
 
 		/* Both LEB 1 and LEB 2 are OK and consistent */
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		kfree(leb[1]);
+#else
 		vfree(leb[1]);
+#endif
 		return leb[0];
 	} else {
 		/* LEB 0 is corrupted or does not exist */
@@ -491,13 +501,22 @@ static struct ubi_vtbl_record *process_lvol(struct ubi_device *ubi,
 			goto out_free;
 		ubi_msg("volume table was restored");
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		kfree(leb[0]);
+#else
 		vfree(leb[0]);
+#endif
 		return leb[1];
 	}
 
 out_free:
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(leb[0]);
+	kfree(leb[1]);
+#else
 	vfree(leb[0]);
 	vfree(leb[1]);
+#endif
 	return ERR_PTR(err);
 }
 
@@ -515,7 +534,11 @@ static struct ubi_vtbl_record *create_empty_lvol(struct ubi_device *ubi,
 	int i;
 	struct ubi_vtbl_record *vtbl;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	vtbl = kmalloc(ubi->vtbl_size, GFP_KERNEL);
+#else
 	vtbl = vmalloc(ubi->vtbl_size);
+#endif
 	if (!vtbl)
 		return ERR_PTR(-ENOMEM);
 	memset(vtbl, 0, ubi->vtbl_size);
@@ -528,7 +551,11 @@ static struct ubi_vtbl_record *create_empty_lvol(struct ubi_device *ubi,
 
 		err = create_vtbl(ubi, si, i, vtbl);
 		if (err) {
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+			kfree(vtbl);
+#else
 			vfree(vtbl);
+#endif
 			return ERR_PTR(err);
 		}
 	}

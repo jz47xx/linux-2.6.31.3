@@ -267,7 +267,7 @@ int add_mtd_device(struct mtd_info *mtd)
 			mtd_table[i] = mtd;
 			mtd->index = i;
 			mtd->usecount = 0;
-
+#if 0
 			if (is_power_of_2(mtd->erasesize))
 				mtd->erasesize_shift = ffs(mtd->erasesize) - 1;
 			else
@@ -280,7 +280,7 @@ int add_mtd_device(struct mtd_info *mtd)
 
 			mtd->erasesize_mask = (1 << mtd->erasesize_shift) - 1;
 			mtd->writesize_mask = (1 << mtd->writesize_shift) - 1;
-
+#endif
 			/* Some chips always power up locked. Unlock them now */
 			if ((mtd->flags & MTD_WRITEABLE)
 			    && (mtd->flags & MTD_POWERUP_LOCK) && mtd->unlock) {
@@ -541,10 +541,10 @@ void put_mtd_device(struct mtd_info *mtd)
  */
 
 int default_mtd_writev(struct mtd_info *mtd, const struct kvec *vecs,
-		       unsigned long count, loff_t to, size_t *retlen)
+		       unsigned long count, loff_mtd_t to, size_mtd_t *retlen)
 {
 	unsigned long i;
-	size_t totlen = 0, thislen;
+	size_mtd_t totlen = 0, thislen;
 	int ret = 0;
 
 	if(!mtd->write) {

@@ -172,6 +172,8 @@ source "fs/hfsplus/Kconfig"
 source "fs/befs/Kconfig"
 source "fs/bfs/Kconfig"
 source "fs/efs/Kconfig"
+
+
 source "fs/jffs2/Kconfig"
 # UBIFS File system configuration
 source "fs/ubifs/Kconfig"
@@ -251,5 +253,8 @@ endif
 
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
+
+# Patched by YAFFS
+source "fs/yaffs2/Kconfig"
 
 endmenu

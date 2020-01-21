@@ -4,6 +4,13 @@
 
 menu "Character devices"
 
+config DVBT_NMI
+	tristate "DVBT nmi driver for test on TSSI"
+	depends on JZSOC
+	help
+         If you have an DVBT board and will test for TSSI function
+         say Y or M here, otherwise say N.
+
 config VT
 	bool "Virtual terminal" if EMBEDDED
 	depends on !S390
@@ -798,6 +805,24 @@ config NVRAM
 	  To compile this driver as a module, choose M here: the
 	  module will be called nvram.
 
+config RTC_PCF8563
+	bool 'Philips PCF8563 Real Time Clock (I2C Bus)'
+	help
+	  Philips PCF8563 Real Time Clock (I2C Bus)
+
+config RTC_JZ
+	bool 'Jz47XX On-Chip Real Time Clock'
+	depends on SOC_JZ4750 || SOC_JZ4750D
+	help
+	  Jz47XX On-Chip Real Time Clock
+
+
+config RTC_JZ4760
+	bool 'Jz4760 On-Chip Real Time Clock'
+	depends on SOC_JZ4760
+	help
+	  Jz4760 On-Chip Real Time Clock
+
 #
 # These legacy RTC drivers just cause too many conflicts with the generic
 # RTC framework ... let's not even try to coexist any more.
@@ -1108,7 +1133,10 @@ config DEVPORT
 	depends on ISA || PCI
 	default y
 
+
+
 source "drivers/s390/char/Kconfig"
+source "drivers/char/jzchar/Kconfig"
 
 endmenu
 

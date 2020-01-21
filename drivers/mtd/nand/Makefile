@@ -40,5 +40,22 @@ obj-$(CONFIG_MTD_NAND_SH_FLCTL)		+= sh_flctl.o
 obj-$(CONFIG_MTD_NAND_MXC)		+= mxc_nand.o
 obj-$(CONFIG_MTD_NAND_SOCRATES)		+= socrates_nand.o
 obj-$(CONFIG_MTD_NAND_TXX9NDFMC)	+= txx9ndfmc.o
+obj-$(CONFIG_MTD_NAND_JZ4730)		+= jz4730_nand.o
+obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+obj-$(CONFIG_MTD_NAND_JZ4750)		+= jz4750_nand.o
+ifeq ($(CONFIG_MTD_UBI),y)
+obj-$(CONFIG_MTD_NAND_JZ4760)		+= jz4760_nand_ubi.o
+obj-$(CONFIG_MTD_NAND_JZ4770)		+= jz4770_nand_ubi.o
+else
+obj-$(CONFIG_MTD_NAND_JZ4760)		+= jz4760_nand.o
+obj-$(CONFIG_MTD_NAND_JZ4770)		+= jz4770_nand.o
+endif
+obj-$(CONFIG_MTD_NAND_JZ4760B)		+= jz4760b_nand.o
+obj-$(CONFIG_MTD_NAND_JZ4810)		+= jz4810_nand.o
 
+ifeq ($(CONFIG_MTD_UBI),y)
+nand-objs := nand_base_ubi.o nand_bbt_ubi.o
+else
 nand-objs := nand_base.o nand_bbt.o
+endif
+

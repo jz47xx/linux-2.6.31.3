@@ -1748,12 +1748,13 @@ static int snd_pcm_hw_rule_sample_bits(struct snd_pcm_hw_params *params,
 	return snd_interval_refine(hw_param_interval(params, rule->var), &t);
 }
 
-#if SNDRV_PCM_RATE_5512 != 1 << 0 || SNDRV_PCM_RATE_192000 != 1 << 12
+#if SNDRV_PCM_RATE_5512 != 1 << 0 || SNDRV_PCM_RATE_192000 != 1 << 14
 #error "Change this table"
 #endif
 
-static unsigned int rates[] = { 5512, 8000, 11025, 16000, 22050, 32000, 44100,
-                                 48000, 64000, 88200, 96000, 176400, 192000 };
+static unsigned int rates[] = { 5512, 8000, 11025, 12000, 16000, 22050, 24000, 
+				32000, 44100, 48000, 64000, 88200, 96000, 
+				176400, 192000 };
 
 const struct snd_pcm_hw_constraint_list snd_pcm_known_rates = {
 	.count = ARRAY_SIZE(rates),
@@ -1764,9 +1765,17 @@ static int snd_pcm_hw_rule_rate(struct snd_pcm_hw_params *params,
 				struct snd_pcm_hw_rule *rule)
 {
 	struct snd_pcm_hardware *hw = rule->private;
+#if 0
 	return snd_interval_list(hw_param_interval(params, rule->var),
 				 snd_pcm_known_rates.count,
 				 snd_pcm_known_rates.list, hw->rates);
+#else
+	//printk("hw->rates=0x%08x\n",hw->rates);//0x3b6
+	hw->rates = 0x3fe;//12KHz and 24KHz bits are all zero,you need set 1
+	return snd_interval_list(hw_param_interval(params, rule->var),
+				 snd_pcm_known_rates.count,
+				 snd_pcm_known_rates.list, hw->rates);
+#endif
 }		
 
 static int snd_pcm_hw_rule_buffer_bytes_max(struct snd_pcm_hw_params *params,

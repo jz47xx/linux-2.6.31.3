@@ -194,6 +194,7 @@ config SPI_S3C24XX
 	help
 	  SPI driver for Samsung S3C24XX series ARM SoCs
 
+
 config SPI_S3C24XX_GPIO
 	tristate "Samsung S3C24XX series SPI by GPIO"
 	depends on ARCH_S3C2410 && EXPERIMENTAL
@@ -226,6 +227,30 @@ config SPI_XILINX
 
 	  See the "OPB Serial Peripheral Interface (SPI) (v1.00e)"
 	  Product Specification document (DS464) for hardware details.
+
+config SPI_JZ47XX
+	tristate "Ingenic JZ47XX series SPI driver"
+	depends on JZSOC && EXPERIMENTAL
+	select SPI_BITBANG
+	help
+	  SPI driver for Ingenic JZ47XX series SoCs
+config JZ_SPI0
+    bool "Ingenic SoC SSI controller 0 for SPI Host driver"
+    depends on SPI_JZ47XX
+
+config JZ_SPI1
+    bool "Ingenic SoC SSI controller 1 for SPI Host driver"
+    depends on SPI_JZ47XX
+
+config JZ_SPI_BOARD_INFO_REGISTER
+    bool "Board info associated by spi master"
+    depends on SPI_JZ47XX
+    default n
+
+config JZ_SPIDEV_TEST
+    tristate "Ingenic spi test driver"
+    depends on SPI_JZ47XX
+    default n
 
 #
 # Add new SPI master controllers in alphabetical order above this line

@@ -80,6 +80,41 @@ struct usb_hub {
 	struct delayed_work	init_work;
 };
 
+#if defined (CONFIG_USB_OHCI_HCD) && (CONFIG_JZSOC)
+/* JZ USB Root Hub Workaround - River. */
+static inline int is_root_hub(struct usb_device *udev)
+{
+	return (udev->parent == NULL);
+}
+
+static inline int jz_usb_hub_workaround(struct usb_hub *hub, int port1)
+{
+	if (!is_root_hub(hub->hdev))
+		return 0;
+
+#ifdef CONFIG_SOC_JZ4730
+	/*
+	 * On Jz4730, we assume that the first USB port was used as device.
+	 * If not, please comment next lines.
+	 */
+	if ((port1 == 1)) {
+		return 1;
+	}
+#endif
+
+#if defined(CONFIG_SOC_JZ4740) || defined(CONFIG_SOC_JZ4750) || defined(CONFIG_SOC_JZ4750D) || defined(CONFIG_SOC_JZ4810)
+	/*
+	 * On Jz4740 and Jz4750, the second USB port was used as device.
+	 */
+	if ((port1 == 2)) {
+		return 1;
+	}
+#endif
+	return 0;
+}
+#else
+#define jz_usb_hub_workaround(hub, port1) 0
+#endif
 
 /* Protect struct usb_device->state and ->children members
  * Note: Both are also protected by ->dev.sem, except that ->state can
@@ -1857,6 +1892,9 @@ static int hub_port_reset(struct usb_hub *hub, int port1,
 {
 	int i, status;
 
+	if (jz_usb_hub_workaround(hub, port1))
+		return 0;
+
 	/* Block EHCI CF initialization during the port reset.
 	 * Some companion controllers don't like it when they mix.
 	 */
@@ -2724,7 +2762,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 			retval = -ENOMSG;
 		goto fail;
 	}
-
+	
 	retval = 0;
 
 fail:
@@ -2819,10 +2857,13 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 	struct usb_device *udev;
 	int status, i;
 
+	if (jz_usb_hub_workaround(hub, port1))
+		return;
+
 	dev_dbg (hub_dev,
 		"port %d, status %04x, change %04x, %s\n",
 		port1, portstatus, portchange, portspeed (portstatus));
-
+	
 	if (hub->has_indicators) {
 		set_port_led(hub, port1, HUB_LED_AUTO);
 		hub->indicator[port1-1] = INDICATOR_AUTO;
@@ -3133,7 +3174,7 @@ static void hub_events(void)
 			hub->nerrors = 0;
 			hub->error = 0;
 		}
-
+		
 		/* deal with port status changes */
 		for (i = 1; i <= hub->descriptor->bNbrPorts; i++) {
 			if (test_bit(i, hub->busy_bits))

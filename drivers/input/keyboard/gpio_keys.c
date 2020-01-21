@@ -1,7 +1,13 @@
 /*
- * Driver for keys on GPIO lines capable of generating interrupts.
+ * linux/drivers/input/keyboard/gpio_keys.c
  *
- * Copyright 2005 Phil Blundell
+ * JZ GPIO Buttons driver for JZ4740 PAVO
+ *
+ * User applications can access to this device via /dev/input/eventX.
+ *
+ * Copyright (c) 2005 - 2008  Ingenic Semiconductor Inc.
+ *
+ * Author: Richard <cjfeng@ingenic.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -9,6 +15,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/version.h>
 
 #include <linux/init.h>
 #include <linux/fs.h>
@@ -22,54 +29,133 @@
 #include <linux/platform_device.h>
 #include <linux/input.h>
 #include <linux/gpio_keys.h>
-#include <linux/workqueue.h>
-
 #include <asm/gpio.h>
+#include <asm/jzsoc.h>
 
-struct gpio_button_data {
-	struct gpio_keys_button *button;
-	struct input_dev *input;
-	struct timer_list timer;
-	struct work_struct work;
+
+#define SCAN_INTERVAL       (10)
+
+/*
+ * GPIO Buttons
+ */
+#if defined(CONFIG_KEYBOARD_GPIO) || defined(CONFIG_KEYBOARD_GPIO_MODULE)
+static struct gpio_keys_button pavo_buttons[] = {
+	{
+		.gpio		= 96,
+		.code        	= KEY_1,
+		.desc		= "Button 0",
+		.active_low	= 1,
+	},
+	{
+		.gpio		= 97,
+		.code   	= KEY_2,
+		.desc		= "Button 1",
+		.active_low	= 1,
+	},
+	{
+		.gpio		= 98,
+		.code   	= KEY_3,
+		.desc		= "Button 2",
+		.active_low	= 1,
+	},
+	{
+		.gpio		= 99,
+		.code   	= KEY_4,
+		.desc		= "Button 3",
+		.active_low	= 1,
+	}
 };
 
-struct gpio_keys_drvdata {
-	struct input_dev *input;
-	struct gpio_button_data data[0];
+static struct timer_list button_timer;
+static spinlock_t gpio_lock;
+static int button_no;
+
+static struct gpio_keys_platform_data pavo_button_data = {
+	.buttons	= pavo_buttons,
+	.nbuttons	= ARRAY_SIZE(pavo_buttons),
 };
 
-static void gpio_keys_report_event(struct work_struct *work)
+static struct platform_device pavo_button_device = {
+	.name		= "gpio-keys",
+	.id		= -1,
+	.num_resources	= 0,
+	.dev		= {
+		.platform_data	= &pavo_button_data,
+	}
+};
+
+static void __init pavo_add_device_buttons(void)
 {
-	struct gpio_button_data *bdata =
-		container_of(work, struct gpio_button_data, work);
-	struct gpio_keys_button *button = bdata->button;
-	struct input_dev *input = bdata->input;
-	unsigned int type = button->type ?: EV_KEY;
-	int state = (gpio_get_value(button->gpio) ? 1 : 0) ^ button->active_low;
+	__gpio_as_input(96);
+	__gpio_as_irq_fall_edge(96);
 
-	input_event(input, type, button->code, !!state);
-	input_sync(input);
+	__gpio_as_input(97);
+	__gpio_as_irq_fall_edge(97);
+
+	__gpio_as_input(98);
+	__gpio_as_irq_fall_edge(98);
+
+	__gpio_as_input(99);
+	__gpio_as_irq_fall_edge(99);
+
+	platform_device_register(&pavo_button_device);
+}
+#else
+static void __init pavo_add_device_buttons(void) {}
+#endif
+
+static void __init pavo_board_init(void)
+{
+	/* Push Buttons */
+	pavo_add_device_buttons();
 }
 
-static void gpio_keys_timer(unsigned long _data)
+static void button_timer_callback(unsigned long data)
 {
-	struct gpio_button_data *data = (struct gpio_button_data *)_data;
+	unsigned long flags;
+	int gpio = pavo_buttons[button_no].gpio;
+	int code = pavo_buttons[button_no].code;
+	struct platform_device *pdev = (struct platform_device *)data;
+	struct input_dev *input = platform_get_drvdata(pdev);
+	int state;
 
-	schedule_work(&data->work);
+	spin_lock_irqsave(&gpio_lock, flags);
+	state = __gpio_get_pin(gpio);
+        
+	if (state == 0) {
+		/* press down */
+		input_report_key(input, code, 1);
+		input_sync(input);
+		mod_timer(&button_timer, jiffies + SCAN_INTERVAL);
+	} else {
+		/* up */
+		input_report_key(input, code, 0);
+		input_sync(input);
+		udelay(1000);
+		__gpio_as_irq_fall_edge(gpio);
+	}
+	spin_unlock_irqrestore(&gpio_lock, flags);
 }
 
 static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
 {
-	struct gpio_button_data *bdata = dev_id;
-	struct gpio_keys_button *button = bdata->button;
+	int i;
+	struct platform_device *pdev = dev_id;
+	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 
-	BUG_ON(irq != gpio_to_irq(button->gpio));
+	__gpio_ack_irq(irq - IRQ_GPIO_0);
+	for (i = 0; i < pdata->nbuttons; i++) {
+		struct gpio_keys_button *button = &pdata->buttons[i];
+		int gpio = button->gpio;
 
-	if (button->debounce_interval)
-		mod_timer(&bdata->timer,
-			jiffies + msecs_to_jiffies(button->debounce_interval));
-	else
-		schedule_work(&bdata->work);
+		if (irq == (gpio + IRQ_GPIO_0) ) {
+			/* start timer */
+			__gpio_as_input(gpio);
+			button_no = i;
+			mod_timer(&button_timer, jiffies +  2 * SCAN_INTERVAL);
+			break;
+		}
+	}
 
 	return IRQ_HANDLED;
 }
@@ -77,21 +163,17 @@ static irqreturn_t gpio_keys_isr(int irq, void *dev_id)
 static int __devinit gpio_keys_probe(struct platform_device *pdev)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
-	struct gpio_keys_drvdata *ddata;
 	struct input_dev *input;
 	int i, error;
 	int wakeup = 0;
 
-	ddata = kzalloc(sizeof(struct gpio_keys_drvdata) +
-			pdata->nbuttons * sizeof(struct gpio_button_data),
-			GFP_KERNEL);
 	input = input_allocate_device();
-	if (!ddata || !input) {
-		error = -ENOMEM;
-		goto fail1;
-	}
+	if (!input)
+		return -ENOMEM;
 
-	platform_set_drvdata(pdev, ddata);
+	platform_set_drvdata(pdev, input);
+
+	spin_lock_init(&gpio_lock);
 
 	input->name = pdev->name;
 	input->phys = "gpio-keys/input0";
@@ -101,92 +183,60 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	input->id.vendor = 0x0001;
 	input->id.product = 0x0001;
 	input->id.version = 0x0100;
-
-	/* Enable auto repeat feature of Linux input subsystem */
-	if (pdata->rep)
-		__set_bit(EV_REP, input->evbit);
-
-	ddata->input = input;
+	input->evbit[0] = BIT(EV_KEY) | BIT(EV_SYN) | BIT(EV_REP);
 
 	for (i = 0; i < pdata->nbuttons; i++) {
 		struct gpio_keys_button *button = &pdata->buttons[i];
-		struct gpio_button_data *bdata = &ddata->data[i];
 		int irq;
 		unsigned int type = button->type ?: EV_KEY;
 
-		bdata->input = input;
-		bdata->button = button;
-		setup_timer(&bdata->timer,
-			    gpio_keys_timer, (unsigned long)bdata);
-		INIT_WORK(&bdata->work, gpio_keys_report_event);
-
-		error = gpio_request(button->gpio, button->desc ?: "gpio_keys");
-		if (error < 0) {
-			pr_err("gpio-keys: failed to request GPIO %d,"
-				" error %d\n", button->gpio, error);
-			goto fail2;
-		}
-
-		error = gpio_direction_input(button->gpio);
-		if (error < 0) {
-			pr_err("gpio-keys: failed to configure input"
-				" direction for GPIO %d, error %d\n",
-				button->gpio, error);
-			gpio_free(button->gpio);
-			goto fail2;
-		}
-
-		irq = gpio_to_irq(button->gpio);
+		irq = IRQ_GPIO_0 + button->gpio;
 		if (irq < 0) {
 			error = irq;
 			pr_err("gpio-keys: Unable to get irq number"
 				" for GPIO %d, error %d\n",
 				button->gpio, error);
-			gpio_free(button->gpio);
-			goto fail2;
+			goto fail;
 		}
 
 		error = request_irq(irq, gpio_keys_isr,
-				    IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+				    IRQF_SAMPLE_RANDOM | IRQF_DISABLED,
 				    button->desc ? button->desc : "gpio_keys",
-				    bdata);
+				    pdev);
 		if (error) {
 			pr_err("gpio-keys: Unable to claim irq %d; error %d\n",
 				irq, error);
-			gpio_free(button->gpio);
-			goto fail2;
+			goto fail;
 		}
 
 		if (button->wakeup)
 			wakeup = 1;
-
 		input_set_capability(input, type, button->code);
 	}
+
+	/* Init timer */
+	init_timer(&button_timer);
+	button_timer.data = (unsigned long)&pavo_button_device;
+	button_timer.function = button_timer_callback;
 
 	error = input_register_device(input);
 	if (error) {
 		pr_err("gpio-keys: Unable to register input device, "
 			"error: %d\n", error);
-		goto fail2;
+		goto fail;
 	}
 
 	device_init_wakeup(&pdev->dev, wakeup);
 
 	return 0;
 
- fail2:
+ fail:
 	while (--i >= 0) {
-		free_irq(gpio_to_irq(pdata->buttons[i].gpio), &ddata->data[i]);
-		if (pdata->buttons[i].debounce_interval)
-			del_timer_sync(&ddata->data[i].timer);
-		cancel_work_sync(&ddata->data[i].work);
-		gpio_free(pdata->buttons[i].gpio);
+		free_irq(pdata->buttons[i].gpio + IRQ_GPIO_0 , pdev);
 	}
 
 	platform_set_drvdata(pdev, NULL);
- fail1:
 	input_free_device(input);
-	kfree(ddata);
 
 	return error;
 }
@@ -194,19 +244,14 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 static int __devexit gpio_keys_remove(struct platform_device *pdev)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
-	struct gpio_keys_drvdata *ddata = platform_get_drvdata(pdev);
-	struct input_dev *input = ddata->input;
+	struct input_dev *input = platform_get_drvdata(pdev);
 	int i;
 
 	device_init_wakeup(&pdev->dev, 0);
 
 	for (i = 0; i < pdata->nbuttons; i++) {
-		int irq = gpio_to_irq(pdata->buttons[i].gpio);
-		free_irq(irq, &ddata->data[i]);
-		if (pdata->buttons[i].debounce_interval)
-			del_timer_sync(&ddata->data[i].timer);
-		cancel_work_sync(&ddata->data[i].work);
-		gpio_free(pdata->buttons[i].gpio);
+		int irq = pdata->buttons[i].gpio + IRQ_GPIO_0;
+		free_irq(irq, pdev);
 	}
 
 	input_unregister_device(input);
@@ -220,12 +265,14 @@ static int gpio_keys_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 	int i;
+	
+	printk("%s(): called.\n", __func__);
 
 	if (device_may_wakeup(&pdev->dev)) {
 		for (i = 0; i < pdata->nbuttons; i++) {
 			struct gpio_keys_button *button = &pdata->buttons[i];
 			if (button->wakeup) {
-				int irq = gpio_to_irq(button->gpio);
+				int irq = button->gpio + IRQ_GPIO_0;
 				enable_irq_wake(irq);
 			}
 		}
@@ -238,12 +285,14 @@ static int gpio_keys_resume(struct platform_device *pdev)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 	int i;
+	
+	printk("%s(): called.\n", __func__);
 
 	if (device_may_wakeup(&pdev->dev)) {
 		for (i = 0; i < pdata->nbuttons; i++) {
 			struct gpio_keys_button *button = &pdata->buttons[i];
 			if (button->wakeup) {
-				int irq = gpio_to_irq(button->gpio);
+				int irq = button->gpio + IRQ_GPIO_0;
 				disable_irq_wake(irq);
 			}
 		}
@@ -256,24 +305,25 @@ static int gpio_keys_resume(struct platform_device *pdev)
 #define gpio_keys_resume	NULL
 #endif
 
-static struct platform_driver gpio_keys_device_driver = {
+struct platform_driver gpio_keys_device_driver = {
 	.probe		= gpio_keys_probe,
 	.remove		= __devexit_p(gpio_keys_remove),
 	.suspend	= gpio_keys_suspend,
 	.resume		= gpio_keys_resume,
 	.driver		= {
 		.name	= "gpio-keys",
-		.owner	= THIS_MODULE,
 	}
 };
 
 static int __init gpio_keys_init(void)
 {
+	pavo_board_init();
 	return platform_driver_register(&gpio_keys_device_driver);
 }
 
 static void __exit gpio_keys_exit(void)
 {
+	platform_device_unregister(&pavo_button_device);
 	platform_driver_unregister(&gpio_keys_device_driver);
 }
 
@@ -283,4 +333,3 @@ module_exit(gpio_keys_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Phil Blundell <pb@handhelds.org>");
 MODULE_DESCRIPTION("Keyboard driver for CPU GPIOs");
-MODULE_ALIAS("platform:gpio-keys");

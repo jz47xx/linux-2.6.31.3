@@ -297,7 +297,17 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 
 /*-------------------------------------------------------------------------*/
+#if defined(CONFIG_UDC_USE_LB_CACHE)
+#define GHOST
+#endif
 
+#ifdef GHOST
+extern unsigned long udc_read(unsigned long long offset, unsigned int len, unsigned char *);
+extern unsigned long udc_write(unsigned long long offset, unsigned int len, unsigned char *);
+extern int NAND_LB_Init(void);
+extern int NAND_LB_FLASHCACHE(void);
+extern int FlushDataState;
+#endif
 #define LDBG(lun,fmt,args...) \
 	dev_dbg(&(lun)->dev , fmt , ## args)
 #define MDBG(fmt,args...) \
@@ -369,8 +379,8 @@ static struct {
 } mod_data = {					// Default values
 	.transport_parm		= "BBB",
 	.protocol_parm		= "SCSI",
-	.removable		= 0,
-	.can_stall		= 1,
+	.removable		= 1,
+	.can_stall		= 0,
 	.cdrom			= 0,
 	.vendor			= DRIVER_VENDOR_ID,
 	.product		= DRIVER_PRODUCT_ID,
@@ -580,6 +590,9 @@ struct lun {
 	u32		sense_data_info;
 	u32		unit_attention_data;
 
+#ifdef GHOST
+	unsigned int	is_nand;
+#endif
 	struct device	dev;
 };
 
@@ -714,6 +727,11 @@ struct fsg_dev {
 	unsigned int		nluns;
 	struct lun		*luns;
 	struct lun		*curlun;
+
+#ifdef GHOST
+	unsigned int            nand_lb_active;
+#endif
+
 };
 
 typedef void (*fsg_routine_t)(struct fsg_dev *);
@@ -1627,9 +1645,19 @@ static int do_read(struct fsg_dev *fsg)
 
 		/* Perform the read */
 		file_offset_tmp = file_offset;
+#ifdef GHOST
+		if (curlun->is_nand)
+			nread = udc_read(file_offset_tmp, amount, bh->buf);
+		else
+			nread = vfs_read(curlun->filp,
+					(char __user *) bh->buf,
+					amount, &file_offset_tmp);
+#else
 		nread = vfs_read(curlun->filp,
 				(char __user *) bh->buf,
 				amount, &file_offset_tmp);
+#endif
+
 		VLDBG(curlun, "file read %u @ %llu -> %d\n", amount,
 				(unsigned long long) file_offset,
 				(int) nread);
@@ -1805,17 +1833,26 @@ static int do_write(struct fsg_dev *fsg)
 			amount = bh->outreq->actual;
 			if (curlun->file_length - file_offset < amount) {
 				LERROR(curlun,
-	"write %u @ %llu beyond end %llu\n",
-	amount, (unsigned long long) file_offset,
-	(unsigned long long) curlun->file_length);
+				"write %u @ %llu beyond end %llu\n",
+				amount, (unsigned long long) file_offset,
+				(unsigned long long) curlun->file_length);
 				amount = curlun->file_length - file_offset;
 			}
 
 			/* Perform the write */
 			file_offset_tmp = file_offset;
+#ifdef GHOST
+			if (curlun->is_nand)
+				nwritten = udc_write(file_offset_tmp, amount, bh->buf);
+			else
+				nwritten = vfs_write(curlun->filp,
+						     (char __user *) bh->buf,
+						     amount, &file_offset_tmp);
+#else
 			nwritten = vfs_write(curlun->filp,
 					(char __user *) bh->buf,
 					amount, &file_offset_tmp);
+#endif
 			VLDBG(curlun, "file write %u @ %llu -> %d\n", amount,
 					(unsigned long long) file_offset,
 					(int) nwritten);
@@ -1974,9 +2011,18 @@ static int do_verify(struct fsg_dev *fsg)
 
 		/* Perform the read */
 		file_offset_tmp = file_offset;
+#ifdef GHOST
+		if (curlun->is_nand)
+			nread = udc_read(file_offset_tmp, amount, bh->buf);
+		else
+			nread = vfs_read(curlun->filp,
+					 (char __user *) bh->buf,
+					 amount, &file_offset_tmp);
+#else
 		nread = vfs_read(curlun->filp,
 				(char __user *) bh->buf,
 				amount, &file_offset_tmp);
+#endif
 		VLDBG(curlun, "file read %u @ %llu -> %d\n", amount,
 				(unsigned long long) file_offset,
 				(int) nread);
@@ -2011,7 +2057,7 @@ static int do_inquiry(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
 	u8	*buf = (u8 *) bh->buf;
 
-	static char vendor_id[] = "Linux   ";
+	static char vendor_id[] = "Ingenic ";
 	static char product_disk_id[] = "File-Stor Gadget";
 	static char product_cdrom_id[] = "File-CD Gadget  ";
 
@@ -2992,6 +3038,15 @@ static int do_scsi_command(struct fsg_dev *fsg)
 		reply = check_command(fsg, 6, DATA_DIR_NONE,
 				0, 1,
 				"TEST UNIT READY");
+#ifdef GHOST
+		if( FlushDataState >= 1)
+			FlushDataState++;
+		if(FlushDataState > 6)
+		{	
+			NAND_LB_FLASHCACHE();
+			FlushDataState = 0;
+		}
+#endif
 		break;
 
 	/* Although optional, this command is used by MS-Windows.  We
@@ -3544,6 +3599,15 @@ static int fsg_main_thread(void *fsg_)
 
 	/* The main loop */
 	while (fsg->state != FSG_STATE_TERMINATED) {
+#ifdef GHOST
+		if (fsg->nand_lb_active && (test_bit(SUSPENDED, &fsg->atomic_bitflags)))
+		{
+			NAND_LB_FLASHCACHE();
+
+			/* Don't use resume() to clear this flag - It seems inaccurate. We clear it ourself. */
+			clear_bit(SUSPENDED, &fsg->atomic_bitflags);
+		}
+#endif
 		if (exception_in_progress(fsg) || signal_pending(current)) {
 			handle_exception(fsg);
 			continue;
@@ -3676,6 +3740,21 @@ static int open_backing_file(struct lun *curlun, const char *filename)
 	LDBG(curlun, "open backing file: %s\n", filename);
 	rc = 0;
 
+#ifdef GHOST
+#if defined(CONFIG_MTD_UBI)
+	if (strstr(filename,"ubiblock")) {
+#else
+	if (strstr(filename,"mtdblock")) {
+#endif
+		if (!the_fsg->nand_lb_active) {
+			NAND_LB_Init();
+		}
+		
+		the_fsg->nand_lb_active++;
+		curlun->is_nand = 1;
+	}
+#endif
+
 out:
 	filp_close(filp, current->files);
 	return rc;
@@ -3684,6 +3763,16 @@ out:
 
 static void close_backing_file(struct lun *curlun)
 {
+
+#ifdef GHOST
+	if (curlun->is_nand) {	
+		the_fsg->nand_lb_active--;
+		curlun->is_nand = 0;
+
+		NAND_LB_FLASHCACHE();
+	}
+#endif		
+
 	if (curlun->filp) {
 		LDBG(curlun, "close backing file\n");
 		fput(curlun->filp);
@@ -4141,8 +4230,13 @@ static int __init fsg_bind(struct usb_gadget *gadget)
 				if (IS_ERR(p))
 					p = NULL;
 			}
+#ifdef GHOST
+			LINFO(curlun, "ro=%d, is_nand=%d, file: %s\n",
+					curlun->ro, curlun->is_nand, (p ? p : "(error)"));
+#else
 			LINFO(curlun, "ro=%d, file: %s\n",
 					curlun->ro, (p ? p : "(error)"));
+#endif
 		}
 	}
 	kfree(pathbuf);

@@ -250,8 +250,25 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 		memset(&brq, 0, sizeof(struct mmc_blk_request));
 		brq.mrq.cmd = &brq.cmd;
 		brq.mrq.data = &brq.data;
-
 		brq.cmd.arg = blk_rq_pos(req);
+
+#if 0
+		if(!strcmp(mmc_hostname(card->host) ,"mmc0")){
+#if defined(CONFIG_JZ_BOOT_FROM_MSC0)
+			brq.cmd.arg = blk_rq_pos(req) + 16384;			
+#else
+			brq.cmd.arg = blk_rq_pos(req);
+#endif   
+		}
+		else
+			brq.cmd.arg = blk_rq_pos(req);
+
+#if defined( CONFIG_JZ_BOOT_FROM_MSC0)
+		brq.cmd.arg = blk_rq_pos(req) + 16384;
+#else
+		brq.cmd.arg = blk_rq_pos(req);
+#endif
+#endif
 		if (!mmc_card_blockaddr(card))
 			brq.cmd.arg <<= 9;
 		brq.cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_ADTC;
@@ -389,6 +406,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 				 * so make sure to check both the busy
 				 * indication and the card state.
 				 */
+
 			} while (!(cmd.resp[0] & R1_READY_FOR_DATA) ||
 				(R1_CURRENT_STATE(cmd.resp[0]) == 7));
 

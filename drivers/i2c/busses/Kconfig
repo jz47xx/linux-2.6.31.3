@@ -3,9 +3,70 @@
 #
 
 menu "I2C Hardware Bus support"
-
 comment "PC SMBus host controller drivers"
 	depends on PCI
+
+config I2C_JZ47XX
+	tristate "JZ47XX I2C Interface support"
+	depends on SOC_JZ4730 || SOC_JZ4740  || SOC_JZ4750
+	help
+	  If you have devices in the Ingenic JZ4730/JZ4740/JZ4750 I2C bus, say yes to
+	  this option. This driver can also be built as a module.  If so, the
+	  module will be called i2c-jz47xx.
+
+config JZ_I2C
+	tristate "JZ I2C controller support"
+	depends on SOC_JZ4760B || SOC_JZ4770 ||SOC_JZ4810
+	help
+	  atomatically selected by CONFIG_JZ_I2C0, CONFIG_JZ_I2C1, CONFIG_JZ_I2C2
+
+config JZ_I2C0
+	tristate "JZ I2C controller 0 support"
+	depends on JZ_I2C
+	default y
+	help
+	  say yes to use JZ I2C controller 0. This driver can also be built as a module
+
+config JZ_I2C0_USE_DMA
+	bool "DMA support for I2C controller 0"
+	depends on JZ_I2C0
+	default y
+
+config JZ_I2C1
+	tristate "JZ I2C controller 1 support"
+	depends on JZ_I2C
+	help
+	  say yes to use JZ I2C controller 1. This driver can also be built as a module
+
+config JZ_I2C1_USE_DMA
+	bool "DMA support for I2C controller 1"
+	depends on JZ_I2C1
+	default y
+
+config JZ_I2C2
+	tristate "JZ I2C controller 2 support"
+	depends on JZ_I2C && (SOC_JZ4770 || SOC_JZ4810)
+	help
+	  say yes to use JZ I2C controller 2. This driver can also be built as a module
+	
+config JZ_I2C2_USE_DMA
+	bool "DMA support for I2C controller 2"
+	depends on JZ_I2C2
+	default y
+
+config I2C0_JZ4760
+	tristate "JZ4760 I2C controler 0 Interface support"
+	depends on SOC_JZ4760
+	help
+	  If you have devices in the Ingenic JZ4760 I2C controler 0 bus, say yes to
+	  this option. This driver can also be built as a module.
+
+config I2C1_JZ4760
+	tristate "JZ4760 I2C  controler 1 Interface support"
+	depends on SOC_JZ4760
+	help
+	  If you have devices in the Ingenic JZ4760 I2C controler 1 bus, say yes to
+	  this option. This driver can also be built as a module.
 
 config I2C_ALI1535
 	tristate "ALI 1535"

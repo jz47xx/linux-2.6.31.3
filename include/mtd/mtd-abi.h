@@ -5,11 +5,18 @@
 #ifndef __MTD_ABI_H__
 #define __MTD_ABI_H__
 
-#include <linux/types.h>
+#include <mtd/types.h>
+
+#ifndef __KERNEL__ 
+#define __user
+#endif
+
+typedef uint64_t size_mtd_t;
+typedef uint64_t loff_mtd_t;
 
 struct erase_info_user {
-	__u32 start;
-	__u32 length;
+	__u64 start;
+	__u64 length;
 };
 
 struct erase_info_user64 {
@@ -30,6 +37,14 @@ struct mtd_oob_buf64 {
 	__u64 usr_ptr;
 };
 
+struct mtd_page_buf {
+	uint32_t start;      //page start address
+	uint32_t ooblength;  
+	uint32_t datlength;
+	unsigned char __user *oobptr;
+	unsigned char __user *datptr;
+};
+
 #define MTD_ABSENT		0
 #define MTD_RAM			1
 #define MTD_ROM			2
@@ -42,6 +57,9 @@ struct mtd_oob_buf64 {
 #define MTD_BIT_WRITEABLE	0x800	/* Single bits can be flipped */
 #define MTD_NO_ERASE		0x1000	/* No erase necessary */
 #define MTD_POWERUP_LOCK	0x2000	/* Always locked after reset */
+
+#define MTD_MTDBLOCK_JZ_INVALID 0x4000  /* Device doesn't works over mtdblock-jz */
+#define MTD_NAND_CPU_MODE       0x8000  /* Using cpu mode for NAND */
 
 // Some common devices / combinations of capabilities
 #define MTD_CAP_ROM		0
@@ -64,7 +82,7 @@ struct mtd_oob_buf64 {
 struct mtd_info_user {
 	__u8 type;
 	__u32 flags;
-	__u32 size;	 // Total size of the MTD
+	__u64 size;	 // Total size of the MTD
 	__u32 erasesize;
 	__u32 writesize;
 	__u32 oobsize;   // Amount of OOB data per block (e.g. 16)
@@ -75,7 +93,7 @@ struct mtd_info_user {
 };
 
 struct region_info_user {
-	__u32 offset;		/* At which this region starts,
+	__u64 offset;		/* At which this region starts,
 					 * from the beginning of the MTD */
 	__u32 erasesize;		/* For this region */
 	__u32 numblocks;		/* Number of blocks in this region */
@@ -98,8 +116,8 @@ struct otp_info {
 #define MEMGETREGIONINFO	_IOWR('M', 8, struct region_info_user)
 #define MEMSETOOBSEL		_IOW('M', 9, struct nand_oobinfo)
 #define MEMGETOOBSEL		_IOR('M', 10, struct nand_oobinfo)
-#define MEMGETBADBLOCK		_IOW('M', 11, __kernel_loff_t)
-#define MEMSETBADBLOCK		_IOW('M', 12, __kernel_loff_t)
+#define MEMGETBADBLOCK		_IOW('M', 11, loff_mtd_t)
+#define MEMSETBADBLOCK		_IOW('M', 12, loff_mtd_t)
 #define OTPSELECT		_IOR('M', 13, int)
 #define OTPGETREGIONCOUNT	_IOW('M', 14, int)
 #define OTPGETREGIONINFO	_IOW('M', 15, struct otp_info)
@@ -110,6 +128,7 @@ struct otp_info {
 #define MEMERASE64		_IOW('M', 20, struct erase_info_user64)
 #define MEMWRITEOOB64		_IOWR('M', 21, struct mtd_oob_buf64)
 #define MEMREADOOB64		_IOWR('M', 22, struct mtd_oob_buf64)
+#define MEMWRITEPAGE		_IOWR('M', 23, struct mtd_page_buf)
 
 /*
  * Obsolete legacy interface. Keep it in order not to break userspace
@@ -119,7 +138,7 @@ struct nand_oobinfo {
 	__u32 useecc;
 	__u32 eccbytes;
 	__u32 oobfree[8][2];
-	__u32 eccpos[32];
+	__u32 eccpos[104];
 };
 
 struct nand_oobfree {
@@ -134,7 +153,7 @@ struct nand_oobfree {
  */
 struct nand_ecclayout {
 	__u32 eccbytes;
-	__u32 eccpos[64];
+	__u32 eccpos[128];
 	__u32 oobavail;
 	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES];
 };

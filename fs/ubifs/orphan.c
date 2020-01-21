@@ -710,7 +710,11 @@ int ubifs_mount_orphans(struct ubifs_info *c, int unclean, int read_only)
 	c->max_orphans = tot_avail_orphs(c);
 
 	if (!read_only) {
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		c->orph_buf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 		c->orph_buf = vmalloc(c->leb_size);
+#endif
 		if (!c->orph_buf)
 			return -ENOMEM;
 	}

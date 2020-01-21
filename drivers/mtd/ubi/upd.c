@@ -155,7 +155,11 @@ int ubi_start_update(struct ubi_device *ubi, struct ubi_volume *vol,
 			vol->updating = 0;
 	}
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	vol->upd_buf = kmalloc(ubi->leb_size, GFP_KERNEL);
+#else
 	vol->upd_buf = vmalloc(ubi->leb_size);
+#endif
 	if (!vol->upd_buf)
 		return -ENOMEM;
 
@@ -192,7 +196,11 @@ int ubi_start_leb_change(struct ubi_device *ubi, struct ubi_volume *vol,
 	vol->ch_lnum = req->lnum;
 	vol->ch_dtype = req->dtype;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	vol->upd_buf = kmalloc(req->bytes, GFP_KERNEL);
+#else
 	vol->upd_buf = vmalloc(req->bytes);
+#endif
 	if (!vol->upd_buf)
 		return -ENOMEM;
 
@@ -370,7 +378,11 @@ int ubi_more_update_data(struct ubi_device *ubi, struct ubi_volume *vol,
 		if (err == 0) {
 			vol->updating = 0;
 			err = to_write;
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+			kfree(vol->upd_buf);
+#else
 			vfree(vol->upd_buf);
+#endif
 		}
 	}
 
@@ -427,7 +439,11 @@ int ubi_more_leb_change_data(struct ubi_device *ubi, struct ubi_volume *vol,
 	if (vol->upd_received == vol->upd_bytes) {
 		vol->changing_leb = 0;
 		err = count;
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+		kfree(vol->upd_buf);
+#else
 		vfree(vol->upd_buf);
+#endif
 	}
 
 	return err;

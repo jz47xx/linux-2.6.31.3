@@ -95,7 +95,11 @@ static int get_master_node(const struct ubifs_info *c, int lnum, void **pbuf,
 	int err, offs, len;
 	void *sbuf, *buf;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	sbuf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 	sbuf = vmalloc(c->leb_size);
+#endif
 	if (!sbuf)
 		return -ENOMEM;
 

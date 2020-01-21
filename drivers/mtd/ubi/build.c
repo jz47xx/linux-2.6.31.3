@@ -47,6 +47,113 @@
 /* Maximum length of the 'mtd=' parameter */
 #define MTD_PARAM_LEN_MAX 64
 
+/* add by Nancy begin */
+DEFINE_MUTEX(vol_table_mutex);
+struct ubi_volume *vol_table[UBI_MAX_VOLUMES];
+
+EXPORT_SYMBOL_GPL(vol_table_mutex);
+EXPORT_SYMBOL_GPL(vol_table);
+
+static LIST_HEAD(vol_notifiers);
+
+int add_vol_device(struct ubi_volume *vol)
+{
+	mutex_lock(&vol_table_mutex);
+	if (!vol_table[vol->vol_id]) {
+
+		struct list_head *this;
+		vol_table[vol->vol_id] = vol;			
+		/* No need to get a refcount on the module containing
+		   the notifier, since we hold the vol_table_mutex */
+		list_for_each(this, &vol_notifiers) {
+			struct vol_notifier *not = list_entry(this, struct vol_notifier, list);
+			not->add(vol);
+		}
+		mutex_unlock(&vol_table_mutex);
+		/* We _know_ we aren't being removed, because
+		   our caller is still holding us here. So none
+		   of this try_ nonsense, and no bitching about it
+		   either. :) */
+		return 0;
+	}
+	mutex_unlock(&vol_table_mutex);
+	return 1;
+}
+
+int del_vol_device (struct ubi_volume *vol)
+{
+	int ret;
+	struct list_head *this;
+
+	mutex_lock(&vol_table_mutex);
+	if (vol_table[vol->vol_id] != vol) {
+		ret = -ENODEV;
+	} else if (vol->readers ||vol->writers || vol->exclusive) {
+		printk(KERN_NOTICE "Removing MTD device #%d (%s) with use count 0\n",
+		       vol->vol_id, vol->name);
+		ret = -EBUSY;
+	} else {
+		/* No need to get a refcount on the module containing
+		   the notifier, since we hold the vol_table_mutex */
+		list_for_each(this, &vol_notifiers) {
+			struct vol_notifier *not = list_entry(this, struct vol_notifier, list);
+			not->remove(vol);
+		}
+
+		vol_table[vol->vol_id] = NULL;
+		module_put(THIS_MODULE);
+		ret = 0;
+	}
+	mutex_unlock(&vol_table_mutex);
+	return ret;
+}
+
+void register_vol_user(struct vol_notifier *new)
+{
+	int i;
+
+	mutex_lock(&vol_table_mutex);
+	list_add(&new->list, &vol_notifiers);
+ 	__module_get(THIS_MODULE);
+
+	for (i=0; i< UBI_MAX_VOLUMES;  i++)
+		if (vol_table[i])
+			new->add(vol_table[i]);
+
+	mutex_unlock(&vol_table_mutex);
+}
+
+int unregister_vol_user(struct vol_notifier *old)
+{
+	int i;
+
+	mutex_lock(&vol_table_mutex);
+	module_put(THIS_MODULE);
+
+	for (i=0; i< UBI_MAX_VOLUMES; i++)
+		if (vol_table[i])
+			old->remove(vol_table[i]);
+
+	list_del(&old->list);
+	mutex_unlock(&vol_table_mutex);
+	return 0;
+}
+
+static int bdev_init(struct ubi_device *ubi){
+	int i;
+	for(i=0; i<ubi->vtbl_slots; i++)
+		if(ubi->volumes[i])
+			add_vol_device(ubi->volumes[i]);
+	return 0;
+}
+
+EXPORT_SYMBOL_GPL(add_vol_device);
+EXPORT_SYMBOL_GPL(del_vol_device);
+EXPORT_SYMBOL_GPL(register_vol_user);
+EXPORT_SYMBOL_GPL(unregister_vol_user);
+/* add by Nancy end */
+
+
 /**
  * struct mtd_dev_param - MTD device parameter description data structure.
  * @name: MTD device name or number string
@@ -291,7 +398,7 @@ int ubi_major2num(int major)
 	for (i = 0; i < UBI_MAX_DEVICES; i++) {
 		struct ubi_device *ubi = ubi_devices[i];
 
-		if (ubi && MAJOR(ubi->cdev.dev) == major) {
+		if (ubi && ((MAJOR(ubi->cdev.dev) == major) || (ubi->bdev_major == major))) { //modify by ylyuan
 			ubi_num = ubi->ubi_num;
 			break;
 		}
@@ -300,6 +407,7 @@ int ubi_major2num(int major)
 
 	return ubi_num;
 }
+EXPORT_SYMBOL_GPL(ubi_major2num);
 
 /* "Show" method for files in '/<sysfs>/class/ubi/ubiX/' */
 static ssize_t dev_attribute_show(struct device *dev,
@@ -605,7 +713,11 @@ out_wl:
 	ubi_wl_close(ubi);
 out_vtbl:
 	free_internal_volumes(ubi);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->vtbl);
+#else
 	vfree(ubi->vtbl);
+#endif
 out_si:
 	ubi_scan_destroy_si(si);
 	return err;
@@ -628,6 +740,12 @@ out_si:
  */
 static int io_init(struct ubi_device *ubi)
 {
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	printk("UBI: kmalloc instead of vmalloc is used.\n");
+#else
+	printk("UBI: vmalloc is used.\n");
+#endif
+
 	if (ubi->mtd->numeraseregions != 0) {
 		/*
 		 * Some flashes have several erase regions. Different regions
@@ -664,6 +782,11 @@ static int io_init(struct ubi_device *ubi)
 
 	ubi->min_io_size = ubi->mtd->writesize;
 	ubi->hdrs_min_io_size = ubi->mtd->writesize >> ubi->mtd->subpage_sft;
+	/* Don't use sub-page for SLC NANDs */
+	if (ubi->hdrs_min_io_size != ubi->mtd->writesize) {
+		ubi->hdrs_min_io_size = ubi->mtd->writesize;
+		ubi_msg("do not use sub-page for SLC NANDs.");
+	}
 
 	/*
 	 * Make sure minimal I/O unit is power of 2. Note, there is no
@@ -947,17 +1070,32 @@ int ubi_attach_mtd_dev(struct mtd_info *mtd, int ubi_num, int vid_hdr_offset)
 		goto out_free;
 
 	err = -ENOMEM;
+
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	ubi->peb_buf1 = kmalloc(ubi->peb_size, GFP_KERNEL);
+#else
 	ubi->peb_buf1 = vmalloc(ubi->peb_size);
+#endif
+
 	if (!ubi->peb_buf1)
 		goto out_free;
 
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	ubi->peb_buf2 = kmalloc(ubi->peb_size, GFP_KERNEL);
+#else
 	ubi->peb_buf2 = vmalloc(ubi->peb_size);
+#endif
+
 	if (!ubi->peb_buf2)
 		goto out_free;
 
 #ifdef CONFIG_MTD_UBI_DEBUG_PARANOID
 	mutex_init(&ubi->dbg_buf_mutex);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	ubi->dbg_peb_buf = kmalloc(ubi->peb_size, GFP_KERNEL);
+#else
 	ubi->dbg_peb_buf = vmalloc(ubi->peb_size);
+#endif
 	if (!ubi->dbg_peb_buf)
 		goto out_free;
 #endif
@@ -977,6 +1115,11 @@ int ubi_attach_mtd_dev(struct mtd_info *mtd, int ubi_num, int vid_hdr_offset)
 	err = uif_init(ubi);
 	if (err)
 		goto out_nofree;
+
+	//add by Nancy
+	err = bdev_init(ubi);
+	if (err)
+		goto out_detach;
 
 	ubi->bgt_thread = kthread_create(ubi_thread, ubi, ubi->bgt_name);
 	if (IS_ERR(ubi->bgt_thread)) {
@@ -1031,12 +1174,26 @@ out_detach:
 	if (do_free)
 		free_user_volumes(ubi);
 	free_internal_volumes(ubi);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->vtbl);
+#else
 	vfree(ubi->vtbl);
+#endif
 out_free:
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->peb_buf1);
+	kfree(ubi->peb_buf2);
+#else
 	vfree(ubi->peb_buf1);
 	vfree(ubi->peb_buf2);
+#endif
+
 #ifdef CONFIG_MTD_UBI_DEBUG_PARANOID
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->dbg_peb_buf);
+#else
 	vfree(ubi->dbg_peb_buf);
+#endif
 #endif
 	kfree(ubi);
 	return err;
@@ -1102,12 +1259,25 @@ int ubi_detach_mtd_dev(int ubi_num, int anyway)
 	uif_close(ubi);
 	ubi_wl_close(ubi);
 	free_internal_volumes(ubi);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->vtbl);
+#else
 	vfree(ubi->vtbl);
+#endif
 	put_mtd_device(ubi->mtd);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->peb_buf1);
+	kfree(ubi->peb_buf2);
+#else
 	vfree(ubi->peb_buf1);
 	vfree(ubi->peb_buf2);
+#endif
 #ifdef CONFIG_MTD_UBI_DEBUG_PARANOID
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(ubi->dbg_peb_buf);
+#else
 	vfree(ubi->dbg_peb_buf);
+#endif
 #endif
 	ubi_msg("mtd%d is detached from ubi%d", ubi->mtd->index, ubi->ubi_num);
 	put_device(&ubi->dev);

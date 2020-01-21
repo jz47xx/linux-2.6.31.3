@@ -65,6 +65,15 @@ config WM8350_WATCHDOG
 # ALPHA Architecture
 
 # ARM Architecture
+ 
+config JZ_WDT
+	bool 'JzSoC On-Chip watchdog'
+	help
+	  Watchdog timer embedded into JZSOC chips. This will reboot your
+	  system when the timeout is reached.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called jz_wdt.
 
 config AT91RM9200_WATCHDOG
 	tristate "AT91RM9200 watchdog"

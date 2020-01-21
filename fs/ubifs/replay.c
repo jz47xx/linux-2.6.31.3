@@ -1025,8 +1025,11 @@ int ubifs_replay_journal(struct ubifs_info *c)
 			  c->ihead_offs);
 		return -EINVAL;
 	}
-
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	sbuf = kmalloc(c->leb_size, GFP_KERNEL);
+#else
 	sbuf = vmalloc(c->leb_size);
+#endif
 	if (!sbuf)
 		return -ENOMEM;
 
@@ -1079,7 +1082,11 @@ int ubifs_replay_journal(struct ubifs_info *c)
 out:
 	destroy_replay_tree(c);
 	destroy_bud_list(c);
+#if defined(CONFIG_MTD_NAND_DMA) && !defined(CONFIG_MTD_NAND_DMABUF)
+	kfree(sbuf);
+#else
 	vfree(sbuf);
+#endif
 	c->replaying = 0;
 	return err;
 }

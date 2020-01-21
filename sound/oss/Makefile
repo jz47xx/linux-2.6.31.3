@@ -8,6 +8,17 @@
 obj-$(CONFIG_SOUND_OSS)		+= sound.o
 
 # Please leave it as is, cause the link order is significant !
+#
+obj-$(CONFIG_SOUND_JZ_AC97)	+= jz_ac97.o ac97_codec.o
+obj-$(CONFIG_I2S_AK4642EN)	+= ak4642en.o
+obj-$(CONFIG_I2S_ICODEC)	+= jzcodec.o jz4740_i2s.o
+obj-$(CONFIG_I2S_DLV_4750)      += jzdlv.o jz_i2s.o
+obj-$(CONFIG_I2S_DLV_4760)	+= jz4760_dlv.o jz4760_i2s.o
+obj-$(CONFIG_I2S_DLV_4770)	+= jz4770_dlv.o jz4770_i2s.o
+obj-$(CONFIG_I2S_DLV_4810)	+= jztest_dlv.o jztest_i2s.o
+obj-$(CONFIG_SOUND_JZ_PCM)	+= jz_pcm_tlv320aic1106_dma.o
+obj-$(CONFIG_JZ_PCM)		+= jz4760_pcm.o
+obj-$(CONFIG_SOUND_JZ_SPDIF)	+= jz_spdif.o
 
 obj-$(CONFIG_SOUND_SH_DAC_AUDIO)	+= sh_dac_audio.o
 obj-$(CONFIG_SOUND_AEDSP16)	+= aedsp16.o

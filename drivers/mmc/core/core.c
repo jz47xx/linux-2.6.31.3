@@ -866,8 +866,6 @@ void mmc_rescan(struct work_struct *work)
 		host->bus_ops->detect(host);
 
 	mmc_bus_put(host);
-
-
 	mmc_bus_get(host);
 
 	/* if there still is a card present, stop here */
@@ -935,7 +933,11 @@ out:
 void mmc_start_host(struct mmc_host *host)
 {
 	mmc_power_off(host);
+#if defined(CONFIG_JZ_SYSTEM_AT_CARD)
+	mmc_rescan(&host->detect.work);
+#else
 	mmc_detect_change(host, 0);
+#endif
 }
 
 void mmc_stop_host(struct mmc_host *host)

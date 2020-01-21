@@ -173,6 +173,69 @@ libs-y				+= arch/mips/fw/lib/
 #
 
 #
+# Commond Ingenic JZ4730 series
+#
+core-$(CONFIG_SOC_JZ4730)	+= arch/mips/jz4730/
+cflags-$(CONFIG_SOC_JZ4730)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4730
+load-$(CONFIG_SOC_JZ4730)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4740 series
+#
+
+core-$(CONFIG_SOC_JZ4740)	+= arch/mips/jz4740/
+cflags-$(CONFIG_SOC_JZ4740)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4740
+load-$(CONFIG_SOC_JZ4740)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4750 series
+#
+
+core-$(CONFIG_SOC_JZ4750)	+= arch/mips/jz4750/
+cflags-$(CONFIG_SOC_JZ4750)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4750
+load-$(CONFIG_SOC_JZ4750)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4750d series
+#
+
+core-$(CONFIG_SOC_JZ4750D)	+= arch/mips/jz4750d/
+cflags-$(CONFIG_SOC_JZ4750D)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4750d
+load-$(CONFIG_SOC_JZ4750D)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4750L series
+#
+
+core-$(CONFIG_SOC_JZ4750L)	+= arch/mips/jz4750l/
+cflags-$(CONFIG_SOC_JZ4750L)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4750l
+load-$(CONFIG_SOC_JZ4750L)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4760 series
+#
+
+core-$(CONFIG_SOC_JZ4760)	+= arch/mips/jz4760/
+cflags-$(CONFIG_SOC_JZ4760)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4760
+load-$(CONFIG_SOC_JZ4760)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4760B series
+#
+
+core-$(CONFIG_SOC_JZ4760B)	+= arch/mips/jz4760b/
+cflags-$(CONFIG_SOC_JZ4760B)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4760b
+load-$(CONFIG_SOC_JZ4760B)	+= 0xffffffff80010000
+
+#
+# Commond Ingenic JZ4770 series
+#
+
+core-$(CONFIG_SOC_JZ4770)	+= arch/mips/jz4770/
+cflags-$(CONFIG_SOC_JZ4770)	+= -I$(srctree)/arch/mips/include/asm/mach-jz4770
+load-$(CONFIG_SOC_JZ4770)	+= 0xffffffff80010000
+
+#
 # Texas Instruments AR7
 #
 core-$(CONFIG_AR7)		+= arch/mips/ar7/
@@ -310,7 +373,7 @@ load-$(CONFIG_MACH_DECSTATION)	+= 0xffffffff80040000
 # Wind River PPMC Board (4KC + GT64120)
 #
 core-$(CONFIG_WR_PPMC)		+= arch/mips/gt64120/wrppmc/
-cflags-$(CONFIG_WR_PPMC)		+= -I$(srctree)/arch/mips/include/asm/mach-wrppmc
+cflags-$(CONFIG_WR_PPMC)	+= -I$(srctree)/arch/mips/include/asm/mach-wrppmc
 load-$(CONFIG_WR_PPMC)		+= 0xffffffff80100000
 
 #
@@ -613,6 +676,7 @@ load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
 endif
 
 cflags-y			+= -I$(srctree)/arch/mips/include/asm/mach-generic
+
 drivers-$(CONFIG_PCI)		+= arch/mips/pci/
 
 ifdef CONFIG_32BIT
@@ -711,6 +775,12 @@ makeboot =$(Q)$(MAKE) $(build)=arch/mips/boot VMLINUX=$(vmlinux-32) $(1)
 
 all:	$(all-y)
 
+uImage: $(vmlinux-32)
+	+@$(call makeboot,$@)
+
+zImage: $(vmlinux-32)
+	+@$(call makeboot,$@)
+
 vmlinux.bin: $(vmlinux-32)
 	+@$(call makeboot,$@)
 
@@ -740,6 +810,7 @@ install:
 
 archclean:
 	@$(MAKE) $(clean)=arch/mips/boot
+	@$(MAKE) $(clean)=arch/mips/boot/compressed
 	@$(MAKE) $(clean)=arch/mips/lasat
 
 define archhelp
@@ -747,6 +818,9 @@ define archhelp
 	echo '  vmlinux.ecoff        - ECOFF boot image'
 	echo '  vmlinux.bin          - Raw binary boot image'
 	echo '  vmlinux.srec         - SREC boot image'
+        echo '  uImage - u-boot format image (arch/$(ARCH)/boot/uImage)'
+        echo '  zImage - Compressed binary image (arch/$(ARCH)/boot/compressed/zImage)'
+        echo '  vmlinux.bin    - Uncompressed binary image (arch/$(ARCH)/boot/vmlinux.bin)'
 	echo
 	echo '  These will be default as apropriate for a configured platform.'
 endef
